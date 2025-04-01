@@ -1,0 +1,19 @@
+{
+  "__version__": "3.0.7",
+  "builder": {
+    "options": {
+      "web-desktop": {
+        "configID": "da04dc",
+        "services": []
+      },
+      "web-mobile": {
+        "configID": "da04dc",
+        "services": []
+      }
+    }
+  },
+  "builder-options": {
+    "configID": "da04dc",
+    "services": []
+  }
+}
