@@ -1,0 +1,50 @@
+# ====================================
+# Cocos Creator 3.x .gitignore
+# ====================================
+
+# Cocos auto-generated folders (can be rebuilt)
+library/
+local/
+temp/
+build/
+
+# Logs
+*.log
+
+# OS-specific junk
+.DS_Store
+Thumbs.db
+
+# VSCode settings (optional)
+.vscode/
+
+# npm packages (if using node)
+node_modules/
+
+# Environment / config (optional)
+.env
+.env.local
+
+# Backup or temp files
+*.bak
+*.tmp
+*.swp
+
+# Mac system files
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows system files
+desktop.ini
+
+# Optional: ignore project settings if sharing config causes conflict
+# Uncomment below line if you're working in team with separate editor configs
+# settings/
+
+# Ignore generated font texture (if using bitmap font tool)
+*.fnt.meta
+*_0.png.meta
+
+# Ignore meta cache if needed (Cocos auto-regenerates)
+# *.meta
