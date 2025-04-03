@@ -1,4 +1,4 @@
-import { _decorator, AudioClip, AudioSource, Button, Component, instantiate, Label, Node, Prefab, Toggle, Tween, tween, Vec3 } from 'cc';
+import { _decorator, AudioClip, AudioSource, Button, Component, instantiate, Label, Node, Prefab, sys, Toggle, Tween, tween, Vec3 } from 'cc';
 import { Player3card } from './Player3card';
 const { ccclass, property } = _decorator;
 
@@ -10,6 +10,8 @@ import { Card } from './Card';
 import { warning } from '../../Common/warning';
 import { LobbyManager } from '../Lobby/LobbyManager';
 import { MyUserInfo } from '../../Common/MyUserInfo';
+import { UIManager } from '../../Common/UIManager';
+import { UIID } from '../../Common/UIID';
 
 @ccclass('GameManager3card')
 export class GameManager3card extends NetworkManager {
@@ -53,6 +55,13 @@ export class GameManager3card extends NetworkManager {
             }
             catch { }
         }, this);
+
+        window.onbeforeunload = () => {
+            if (this.room && this.room.id && this.room.sessionId) {
+                sys.localStorage.setItem("lastRoomId", this.room.id);
+                sys.localStorage.setItem("lastSessionId", this.room.sessionId);
+            }
+        };
     }
     protected onDisable(): void {
         GlobalEvent.off('swapToken')
@@ -76,83 +85,7 @@ export class GameManager3card extends NetworkManager {
     public async connect(name, room) {
         try {
             await this.joinRoom(room.roomId, { userName: name, avatar: GlobalVariable.myMezonInfo.avatar, userId: GlobalVariable.myMezonInfo.id });
-            this.room.state.players.onAdd(this.addNewPlayer.bind(this), false)
-            this.room.state.players.onRemove(this.removePlayer.bind(this), false)
-            window.Mezon.WebView.onEvent('SEND_TOKEN_RESPONSE_SUCCESS', (type, data) => {
-                console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
-                this.room.send("getBalance")
-            });
-            this.room.onMessage("balance", (value) => {
-                MyUserInfo.instance.setMoney(value)
-            })
-            console.log("joined GAME successfully!", this.room.state.totalPlayer);
-            this.room.onStateChange((state) => {
-                this.handleState(state);
-            });
-            this.room.state.listen("phase", (currentValue, previousValue) => {
-                if (currentValue == GamePhase.WAITING) {
-                    this.room.state.listen('secondsLeft', this.updateCoutdownLabel.bind(this));
-                    this.room.state.listen('timeToRisk', this.updateCoutdownLabelForTakeRisk.bind(this));
-                    this.room.state.listen('currTurn', this.updateTurnLabel.bind(this));
-                    this.room.state.listen('lastCards', this.showLastCard.bind(this));
-                } else if (currentValue == GamePhase.ENDEDSESION) {
-                    // this.txt_Turn.string = (this.room.state.winner == this.room.sessionId) ? "You win" : "You lose"
-                }
-            });
-            this.room.onMessage("newCards", (value) => {
-                this.showMyCard(value.cards)
-            })
-            this.room.onMessage("warning", (value) => {
-                this.sc_Warning.setWarning(value.message)
-            })
-
-            this.room.onMessage("noticeState", (value) => {
-                console.log(value.message)
-                this.txt_NoticeState.string = value.message
-                if (value.hasOwnProperty("state")) {
-                    switch (value.state) {
-                        case 1:
-                            this.audioSource.playOneShot(this.clip_TakeRisk)
-                            break;
-                    }
-                }
-            })
-
-            this.room.onMessage("invalidMove", (value) => {
-                this.sc_Warning.setWarning(value.message)
-            })
-            this.room.onMessage("validMove", (value) => {
-                this.removeMyCard(value.cards)
-                this.listCardChoosed = []
-            })
-            this.room.onMessage("errorForce", (value) => {
-                this.obj_Disconnect.active = true;
-            })
-
-            this.room.onMessage('youWin', (value) => { console.log('win'); this.youWin(value) });
-            this.room.onMessage('youLose', (value) => { console.log('lose'); this.youLose(value) });
-
-            this.room.onMessage("Join", (value) => {
-                console.log(">>> join " + value)
-            })
-
-            this.room.onLeave((code) => {
-                window.Mezon.WebView.postEvent("LEAVE_ROOM", {});
-                console.log("onLeave:", code);
-                if (1001 <= code && 1015 >= code) {
-                    this.obj_Disconnect.active = true;
-                    GlobalEvent.emit('backToLobby-event');
-                }
-            });
-
-            for (let i = 0; i < 10; i++) {
-                let card_tmp = instantiate(this.pre_Card);
-                let cardComponent1 = card_tmp.getComponent(Card);
-                cardComponent1.setMyCard(false)
-                card_tmp.parent = this.cardParent;
-                this.cardComponent.push(cardComponent1)
-                cardComponent1.node.active = false;
-            }
+            this.registerRoomEvents();
         } catch (e) {
             console.error(e);
             this.sc_Warning.setWarning('Đang dở ván quay lại sau nhé!')
@@ -167,6 +100,7 @@ export class GameManager3card extends NetworkManager {
         }
         return true;
     }
+
     updateCoutdownLabel() {
         this.txt_Time.string = Math.max(0, Math.ceil(this.room.state.secondsLeft)) + '';
     }
@@ -272,6 +206,134 @@ export class GameManager3card extends NetworkManager {
         // if (this.listPlayerComponent.length <= 1) {
         //     this.obj_Disconnect.active = true;
         // }
+    }
+
+    // ------------------------------------------
+    // Hàm registerRoomEvents: gom các sự kiện onMessage, onLeave
+    // ------------------------------------------
+    private registerRoomEvents() {
+        this.room.state.players.onAdd(this.addNewPlayer.bind(this), false)
+        this.room.state.players.onRemove(this.removePlayer.bind(this), false)
+        window.Mezon.WebView.onEvent('SEND_TOKEN_RESPONSE_SUCCESS', (type, data) => {
+            console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
+            this.room.send("getBalance")
+        });
+        this.room.onMessage("balance", (value) => {
+            MyUserInfo.instance.setMoney(value)
+        })
+        console.log("joined GAME successfully!", this.room.state.totalPlayer);
+        // Lưu roomId/sessionId
+        sys.localStorage.setItem("lastRoomId", this.room.id);
+        sys.localStorage.setItem("lastSessionId", this.room.sessionId);
+        this.room.onStateChange((state) => {
+            this.handleState(state);
+        });
+        this.room.state.listen("phase", (currentValue, previousValue) => {
+            if (currentValue == GamePhase.WAITING) {
+                this.room.state.listen('secondsLeft', this.updateCoutdownLabel.bind(this));
+                this.room.state.listen('timeToRisk', this.updateCoutdownLabelForTakeRisk.bind(this));
+                this.room.state.listen('currTurn', this.updateTurnLabel.bind(this));
+                this.room.state.listen('lastCards', this.showLastCard.bind(this));
+            } else if (currentValue == GamePhase.ENDEDSESION) {
+                // this.txt_Turn.string = (this.room.state.winner == this.room.sessionId) ? "You win" : "You lose"
+            }
+        });
+        this.room.onMessage("newCards", (value) => {
+            this.showMyCard(value.cards)
+        })
+        this.room.onMessage("warning", (value) => {
+            this.sc_Warning.setWarning(value.message)
+        })
+
+        this.room.onMessage("noticeState", (value) => {
+            console.log(value.message)
+            this.txt_NoticeState.string = value.message
+            if (value.hasOwnProperty("state")) {
+                switch (value.state) {
+                    case 1:
+                        this.audioSource.playOneShot(this.clip_TakeRisk)
+                        break;
+                }
+            }
+        })
+
+        this.room.onMessage("invalidMove", (value) => {
+            this.sc_Warning.setWarning(value.message)
+        })
+        this.room.onMessage("validMove", (value) => {
+            this.removeMyCard(value.cards)
+            this.listCardChoosed = []
+        })
+        this.room.onMessage("errorForce", (value) => {
+            this.obj_Disconnect.active = true;
+        })
+
+        this.room.onMessage('youWin', (value) => { console.log('win'); this.youWin(value) });
+        this.room.onMessage('youLose', (value) => { console.log('lose'); this.youLose(value) });
+
+        this.room.onMessage("Join", (value) => {
+            console.log(">>> join " + value)
+        })
+
+        this.room.onLeave(async (code) => {
+            window.Mezon.WebView.postEvent("LEAVE_ROOM", {});
+            console.log("onLeave:", code);
+            if (1001 <= code && 1015 >= code) {
+                // Xóa localStorage
+                sys.localStorage.removeItem("lastRoomId");
+                sys.localStorage.removeItem("lastSessionId");
+                this.obj_Disconnect.active = true;
+                GlobalEvent.emit('backToLobby-event');
+            } else {
+                console.log("Mất kết nối => tryReconnect");
+                await this.tryReconnect();
+            }
+        });
+
+        for (let i = 0; i < 10; i++) {
+            let card_tmp = instantiate(this.pre_Card);
+            let cardComponent1 = card_tmp.getComponent(Card);
+            cardComponent1.setMyCard(false)
+            card_tmp.parent = this.cardParent;
+            this.cardComponent.push(cardComponent1)
+            cardComponent1.node.active = false;
+        }
+    }
+
+    // ------------------------------------------
+    // Thử reconnect
+    // ------------------------------------------
+    private async tryReconnect() {
+        const lastRoomId = sys.localStorage.getItem("lastRoomId");
+        const lastSessionId = sys.localStorage.getItem("lastSessionId");
+        if (!lastRoomId || !lastSessionId) {
+            console.log("Không có room cũ => thoát lobby");
+            this.obj_Disconnect.active = true;
+            GlobalEvent.emit('backToLobby-event');
+            return;
+        }
+
+        try {
+            UIManager.Instance.showUI(UIID.ReconnectPopup);
+            console.log("Thử reconnect =>", lastRoomId, lastSessionId);
+            const oldRoom = await this.client.reconnect(lastRoomId, lastSessionId);
+            console.log("Reconnect thành công => oldRoom:", oldRoom);
+
+            this.room = oldRoom;
+            this.registerRoomEvents();
+            UIManager.Instance.HideUI(UIID.ReconnectPopup);
+            // Hiển thị UI => 'Đang trở lại phòng...'
+            // Hoặc chờ server sync state => ...
+        } catch (err) {
+            console.log("Reconnect thất bại:", err);
+
+            // Xóa localStorage
+            sys.localStorage.removeItem("lastRoomId");
+            sys.localStorage.removeItem("lastSessionId");
+
+            this.obj_Disconnect.active = true;
+            GlobalEvent.emit('backToLobby-event');
+        }
     }
 
     start() {

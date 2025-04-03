@@ -47,88 +47,6 @@ export class GameRoomManager extends NetworkManager {
         this.btn_Start.node.on('click', this.startGame, this)
     }
 
-    // ------------------------------------------
-    // Hàm registerRoomEvents: gom các sự kiện onMessage, onLeave
-    // ------------------------------------------
-    private registerRoomEvents() {
-        this.room.onMessage("warning", (value) => {
-            this.sc_Warning.setWarning(value.message);
-        });
-
-        this.room.onMessage("kickResult", (data) => {
-            console.log("Kick Result: ", data.message);
-            this.sc_Warning.setWarning(data.message);
-        });
-
-        this.room.onMessage("kicked", (data) => {
-            console.log("Server báo mình bị kick: ", data.message);
-            this.sc_Warning.setWarning(data.message);
-            this.requestLeaveRoom();
-        });
-
-        this.room.state.listen("roomName", (value, oldValue) => {
-            this.txt_RoomName.string = this.room.state.roomName;
-        });
-
-        // Sự kiện onLeave => tùy code
-        this.room.onLeave(async (code) => {
-            console.log("onLeave:", code);
-            this.resetRoom();
-
-            if (code === 4001) {
-                // Bị kick
-                this.sc_Warning.setWarning("Bạn đã bị kick khỏi phòng!");
-                this.obj_Disconnect.active = true;
-                GlobalEvent.emit('backToLobby-event');
-            }
-            else if (code >= 1001 && code <= 1015) {
-                // Mất kết nối => thử reconnect
-                console.log("Mất kết nối => tryReconnect");
-                await this.tryReconnect();
-            }
-            else {
-                // code = 1000 (user leave) hoặc code khác => về Lobby
-                this.obj_Disconnect.active = true;
-                GlobalEvent.emit('backToLobby-event');
-            }
-        });
-    }
-
-    // ------------------------------------------
-    // Thử reconnect
-    // ------------------------------------------
-    private async tryReconnect() {
-        const lastRoomId = sys.localStorage.getItem("lastRoomId");
-        const lastSessionId = sys.localStorage.getItem("lastSessionId");
-        if (!lastRoomId || !lastSessionId) {
-            console.log("Không có room cũ => thoát lobby");
-            this.obj_Disconnect.active = true;
-            GlobalEvent.emit('backToLobby-event');
-            return;
-        }
-
-        try {
-            console.log("Thử reconnect =>", lastRoomId, lastSessionId);
-            const oldRoom = await this.client.reconnect(lastRoomId, lastSessionId);
-            console.log("Reconnect thành công => oldRoom:", oldRoom);
-
-            this.room = oldRoom;
-            this.registerRoomEvents();
-
-            // Hiển thị UI => 'Đang trở lại phòng...'
-            // Hoặc chờ server sync state => ...
-        } catch (err) {
-            console.log("Reconnect thất bại:", err);
-
-            // Xóa localStorage
-            sys.localStorage.removeItem("lastRoomId");
-            sys.localStorage.removeItem("lastSessionId");
-
-            this.obj_Disconnect.active = true;
-            GlobalEvent.emit('backToLobby-event');
-        }
-    }
-
     async requestLeaveRoom() {
         this.room.leave();
         GlobalEvent.emit('backToLobby-event');
@@ -152,8 +70,6 @@ export class GameRoomManager extends NetworkManager {
             this.btn_Out.node.on('click', this.requestLeaveRoom, this)
             await this.createNewRoom(GlobalVariable.gameInLobby, { roomName: obj.roomName, userName: GlobalVariable.myMezonInfo.name, userId: GlobalVariable.myMezonInfo.id, avatar: GlobalVariable.myMezonInfo.avatar }, false);
             console.log("joined successfully!", this.room);
-            sys.localStorage.setItem("lastRoomId", this.room.id);
-            sys.localStorage.setItem("lastSessionId", this.room.sessionId);
             window.Mezon.WebView.onEvent('SEND_TOKEN_RESPONSE_SUCCESS', (type, data) => {
                 console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
                 this.room.send("getBalance")
@@ -180,7 +96,7 @@ export class GameRoomManager extends NetworkManager {
             });
 
             this.room.state.listen("roomName", (value, oldValue) => {
-                this.txt_RoomName.string = this.room.state.roomName
+                this.txt_RoomName.string = 'Phòng: ' + this.room.state.roomName
             })
             this.room.send("getBalance")
 
@@ -205,15 +121,12 @@ export class GameRoomManager extends NetworkManager {
         try {
             this.btn_Out.node.on('click', this.requestLeaveRoom, this)
             await this.joinRoom(id, { userName: GlobalVariable.myMezonInfo.name, avatar: GlobalVariable.myMezonInfo.avatar, roomName: 'default', userId: GlobalVariable.myMezonInfo.id });
-            this.txt_RoomName.string = this.room.state.roomName
+            this.txt_RoomName.string = 'Phòng: ' + this.room.state.roomName
             window.Mezon.WebView.onEvent('SEND_TOKEN_RESPONSE_SUCCESS', (type, data) => {
                 console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
                 this.room.send("getBalance")
             });
             console.log("joined successfully!");
-                        // Lưu roomId/sessionId
-            sys.localStorage.setItem("lastRoomId", this.room.id);
-            sys.localStorage.setItem("lastSessionId", this.room.sessionId);
             this.room.onMessage("warning", (value) => {
                 this.sc_Warning.setWarning(value.message)
             })
@@ -244,7 +157,7 @@ export class GameRoomManager extends NetworkManager {
             });
 
             this.room.state.listen("roomName", (value, oldValue) => {
-                this.txt_RoomName.string = this.room.state.roomName
+                this.txt_RoomName.string = 'Phòng: ' + this.room.state.roomName
             })
             // this.room.send("getBalance")
 
