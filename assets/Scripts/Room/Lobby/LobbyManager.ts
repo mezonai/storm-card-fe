@@ -9,6 +9,8 @@ import { GameRoomUnit } from '../GameOnLobby/GameRoomUnit';
 import { GameRoomManager } from '../GameOnLobby/GameRoomManager';
 import GlobalEvent from '../../Common/GlobalEvent';
 import { MyUserInfo } from '../../Common/MyUserInfo';
+import { UIManager } from '../../Common/UIManager';
+import { UIID } from '../../Common/UIID';
 
 @ccclass('LobbyManager')
 export class LobbyManager extends NetworkManager {
@@ -17,6 +19,7 @@ export class LobbyManager extends NetworkManager {
     @property({ type: Prefab }) pre_RoomUnit: Prefab = null;
     @property({ type: Node }) obj_PopupCreateRoom: Node = null;
     @property({ type: EditBox }) input_RoomName: EditBox = null;
+    @property({ type: EditBox }) input_RoomBetAmount: EditBox = null;
     @property({ type: EditBox }) input_RoomPass: EditBox = null;
     @property({ type: Node }) obj_LobbyRoom: Node = null;
     @property({ type: Node }) obj_GameRoom: Node = null;
@@ -26,6 +29,7 @@ export class LobbyManager extends NetworkManager {
     @property(Node) obj_Disconnect: Node;
     @property([Button]) tabButtons: Button[] = [];
     @property(ScrollView) scrollView: ScrollView = null;
+    @property(Label) txt_Warning: Label;
     isOwner = false;
     myIndex = 0;
     isReady = false;
@@ -100,15 +104,16 @@ export class LobbyManager extends NetworkManager {
             room.clients > 0 && (room.name == GlobalVariable.gameInLobby || room.name == GlobalVariable.gameRoom)
         )
         for (let i = 0; i < listRoom.length; i++) {
+            console.log('listRoom[i] ', listRoom[i]);
             let isLock = false;
             let roomCom = this.listRoomComponent.find(obj => obj.roomId == listRoom[i].roomId);
             if (roomCom) {
                 roomCom.node.active = true;
-                roomCom.setRoomInfo(listRoom[i].roomId, listRoom[i].metadata?.roomName, listRoom[i].clients + '/' + listRoom[i].maxClients, isLock, listRoom[i].name)
+                roomCom.setRoomInfo(listRoom[i].roomId, listRoom[i].metadata?.roomName, listRoom[i].clients + '/' + listRoom[i].maxClients, isLock, listRoom[i].name, listRoom[i].metadata?.betAmount)
             } else {
                 let room = instantiate(this.pre_RoomUnit);
                 let roomComponent = room.getComponent(GameRoomUnit);
-                roomComponent.setRoomInfo(listRoom[i].roomId, listRoom[i].metadata?.roomName, listRoom[i].clients + '/' + listRoom[i].maxClients, isLock, listRoom[i].name)
+                roomComponent.setRoomInfo(listRoom[i].roomId, listRoom[i].metadata?.roomName, listRoom[i].clients + '/' + listRoom[i].maxClients, isLock, listRoom[i].name, listRoom[i].metadata?.betAmount)
                 console.log('new3 ', isLock)
                 room.setParent(this.obj_ListRoomParent);
                 this.listRoomComponent.push(roomComponent)
@@ -131,28 +136,53 @@ export class LobbyManager extends NetworkManager {
     }
 
     click_CreateRoom() {
-        this.obj_PopupCreateRoom.active = true;
+        UIManager.Instance.showUI(UIID.CreateGamePopup);
+        // this.obj_PopupCreateRoom.active = true;
         this.obj_BtnCreate.active = true;
     }
     click_ClosePopupRoom() {
         this.obj_PopupCreateRoom.active = false;
     }
     click_ConfirmCreat() {
-        if (this.input_RoomName.string.trim() != "") {
-            this.obj_BtnCreate.active = false;
-            this.creatRoom(this.input_RoomName.string.trim())
+        const value = this.input_RoomBetAmount.string.trim();
+        if (!/^\d+$/.test(value)) {
+            console.warn('Mức cược chỉ được nhập số!');
+            this.txt_Warning.string = 'Mức cược chỉ được nhập số!';
+            return;
         }
+        if (this.input_RoomName.string.trim() === "") {
+            console.warn('Bạn chưa nhập tên phòng');
+            this.txt_Warning.string = 'Bạn chưa nhập tên phòng!';
+            return;
+        }
+        if (this.input_RoomBetAmount.string.trim() === "") {
+            console.warn('Bạn chưa nhập mức cược');
+            this.txt_Warning.string = 'Bạn chưa nhập mức cược!';
+            return;
+        }
+        const betAmount = parseInt(this.input_RoomBetAmount.string.trim(), 10);
+        if (isNaN(betAmount) || betAmount > 10000) {
+            console.warn('Mức cược không hợp lệ!');
+            this.txt_Warning.string = 'Mức cược tối đa là 10,000!';
+            return;
+        }
+        this.obj_BtnCreate.active = false;
+        this.createRoom(this.input_RoomName.string.trim(), betAmount);
     }
 
-    async creatRoom(roomName) {
-        this.room.send("creatRoom", { roomName: roomName })
-        this.room.leave();
+    async createRoom(roomName: string, betAmount: number) {
+        // this.room.send("createRoom", { roomName, betAmount })
+        // this.room.leave();
 
-        let isJoined = await this.gameRomManager.joinGameRoomInLobby({ roomName: roomName, userName: GlobalVariable.myMezonInfo.name });
+        let isJoined = await this.gameRomManager.joinGameRoomInLobby({ roomName: roomName, userName: GlobalVariable.myMezonInfo.name, betAmount });
         if (isJoined) {
             this.obj_GameRoomLobby.active = true;
             this.obj_LobbyRoom.active = false;
-            this.obj_PopupCreateRoom.active = false;
+            // this.obj_PopupCreateRoom.active = false;
+            UIManager.Instance.HideUI(UIID.CreateGamePopup);
+            this.txt_Warning.string = '';
+            this.input_RoomBetAmount.string = '';
+            this.input_RoomName.string = '';
         }
     }
     async joinRoom(id, type) {

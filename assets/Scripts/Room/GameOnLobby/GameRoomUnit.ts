@@ -6,24 +6,26 @@ const { ccclass, property } = _decorator;
 export class GameRoomUnit extends Component {
     @property({ type: Label }) txt_RoomName: Label = null;
     @property({ type: Label }) txt_ClientNum: Label = null;
-    @property({ type: Label }) txt_Type: Label = null;
+    @property({ type: Label }) txt_no: Label = null;
+    @property({ type: Label }) txt_betAmount: Label = null;
     @property({ type: Node }) obj_Lock: Node = null;
     @property({ type: Button }) btn: Button;
     roomId;
     roomType;
     isLock;
-    setRoomInfo(id, name, clientNum, isLock, type) {
+    setRoomInfo(id, name, clientNum, isLock, type, betAmount) {
         this.roomId = id;
         this.roomType = type;
         this.txt_RoomName.string = name;
         this.txt_ClientNum.string = clientNum;
+        this.txt_betAmount.string = betAmount;
         this.obj_Lock.active = isLock;
         this.isLock = isLock;
         if (isLock) {
             this.btn.interactable = false;
         } else
             this.btn.interactable = true;
-        this.txt_Type.string = type;
+        // this.txt_no.string = id;
     }
 
     JoinRoom() {

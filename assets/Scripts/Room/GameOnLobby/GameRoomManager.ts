@@ -68,7 +68,7 @@ export class GameRoomManager extends NetworkManager {
     public async joinGameRoomInLobby(obj) {
         try {
             this.btn_Out.node.on('click', this.requestLeaveRoom, this)
-            await this.createNewRoom(GlobalVariable.gameInLobby, { roomName: obj.roomName, userName: GlobalVariable.myMezonInfo.name, userId: GlobalVariable.myMezonInfo.id, avatar: GlobalVariable.myMezonInfo.avatar }, false);
+            await this.createNewRoom(GlobalVariable.gameInLobby, { roomName: obj.roomName, betAmount: obj.betAmount, userName: GlobalVariable.myMezonInfo.name, userId: GlobalVariable.myMezonInfo.id, avatar: GlobalVariable.myMezonInfo.avatar }, false);
             console.log("joined successfully!", this.room);
             window.Mezon.WebView.onEvent('SEND_TOKEN_RESPONSE_SUCCESS', (type, data) => {
                 console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)

@@ -8,4 +8,5 @@ export enum UIID {
     Loading = 6,
     SwapTokenPopup = 7,
     ReconnectPopup = 8,
+    CreateGamePopup = 9,
 }
