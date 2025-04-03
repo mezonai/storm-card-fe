@@ -1,9 +1,9 @@
-import { _decorator, Component, Node, RichText, Button } from 'cc';
+import { _decorator, Component, Node, RichText, Button, Label } from 'cc';
 const { ccclass, property } = _decorator;
 
 @ccclass('MemberUnit')
 export class MemberUnit extends Component {
-    @property({ type: RichText }) txt_UserName: RichText = null;
+    @property({ type: Label }) txt_UserName: RichText = null;
     @property({ type: Node }) obj_Owner: Node = null;
     @property({ type: Node }) obj_Ready: Node = null;
 

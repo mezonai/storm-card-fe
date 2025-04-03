@@ -1,5 +1,6 @@
 import { _decorator, assetManager, Component, ImageAsset, Label, Node, Sprite, SpriteFrame, Texture2D } from 'cc';
 import * as GlobalVariable from '../Common/GlobalVariable';
+import { FitToLabel } from './FitToLabel';
 const { ccclass, property } = _decorator;
 
 @ccclass('MyUserInfo')
@@ -8,6 +9,7 @@ export class MyUserInfo extends Component {
     @property({ type: Label }) txt_Money: Label = null;
     @property({ type: Label }) txt_Mezon: Label = null;
     @property({ type: Sprite }) spr_Avar: Sprite = null;
+    @property({ type: FitToLabel }) fitToLabel: FitToLabel = null;
     private static _instance: MyUserInfo = null;
     public static get instance(): MyUserInfo {
         return MyUserInfo._instance
@@ -23,7 +25,9 @@ export class MyUserInfo extends Component {
         GlobalVariable.myMezonInfo.money = money;
     }
     setInfo(data) {
+        console.log('username ', data.user.username);
         this.txt_Name.string = data.user.username;
+        this.fitToLabel.updateSpriteSize();
         this.txt_Mezon.string = data.wallet.value;
 
         GlobalVariable.myMezonInfo.avatar = data.user.avatar_url

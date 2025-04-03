@@ -8,6 +8,7 @@ export class IAPManager extends Component {
     getGold() {
         const dataEmit = {
             receiver_id: GlobalVariable.botId,
+            receiver_name: GlobalVariable.botName, 
             amount: 0,
             note: `Quy đổi: 1 mezon = 1 Gold`,
             sender_id: GlobalVariable.myMezonInfo.id,
@@ -19,6 +20,7 @@ export class IAPManager extends Component {
     sendMezon() {
         const dataEmit = {
             receiver_id: '',
+            receiver_name: '', 
             amount: 0,
             note: `Send mezon to friend`,
             sender_id: GlobalVariable.myMezonInfo.id,

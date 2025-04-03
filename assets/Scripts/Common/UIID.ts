@@ -6,5 +6,6 @@ export enum UIID {
     PopupSetting = 4,
     PopupError = 5,
     Loading = 6,
-    SwapTokenPopup = 7
+    SwapTokenPopup = 7,
+    ReconnectPopup = 8,
 }

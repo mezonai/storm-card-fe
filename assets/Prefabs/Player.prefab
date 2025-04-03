@@ -813,6 +813,8 @@
       "__id__": 0
     },
     "fileId": "90KYFTh71BeIN+kCYuKSDa",
+    "instance": null,
+    "targetOverrides": null,
     "nestedPrefabInstanceRoots": null
   },
   {
@@ -843,7 +845,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 80,
+      "y": 90,
       "z": 0
     },
     "_lrot": {
@@ -934,7 +936,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 1,
-      "height": 26.2
+      "height": 41.32
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -975,7 +977,7 @@
     "_actualFontSize": 32,
     "_fontSize": 32,
     "_fontFamily": "Arial",
-    "_lineHeight": 20,
+    "_lineHeight": 0,
     "_overflow": 0,
     "_enableWrapText": true,
     "_font": {
@@ -1027,6 +1029,8 @@
       "__id__": 0
     },
     "fileId": "6bqXy82xxPqZPejbJhVmne",
+    "instance": null,
+    "targetOverrides": null,
     "nestedPrefabInstanceRoots": null
   },
   {
@@ -1044,7 +1048,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 258,
-      "height": 41
+      "height": 60
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -1085,7 +1089,7 @@
     },
     "_type": 0,
     "_fillType": 0,
-    "_sizeMode": 1,
+    "_sizeMode": 0,
     "_fillCenter": {
       "__type__": "cc.Vec2",
       "x": 0,
@@ -2266,6 +2270,7 @@
       "__id__": 0
     },
     "fileId": "01RRBpoT1CaZ1kPqo3WrbW",
-    "instance": null
+    "instance": null,
+    "targetOverrides": null
   }
 ]

@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, EditBox, Input, instantiate, JsonAsset, Label, Node, Prefab } from 'cc';
+import { _decorator, Button, Component, EditBox, Input, instantiate, JsonAsset, Label, Node, Prefab, ScrollView } from 'cc';
 const { ccclass, property } = _decorator;
 import * as GlobalVariable from '../../Common/GlobalVariable';
 import { NetworkManager } from '../../Network/NetworkManager';
@@ -24,11 +24,22 @@ export class LobbyManager extends NetworkManager {
     @property({ type: GameRoomManager }) gameRomManager: GameRoomManager = null;
     @property({ type: GameManager3card }) gameManager: GameManager3card = null;
     @property(Node) obj_Disconnect: Node;
+    @property([Button]) tabButtons: Button[] = [];
+    @property(ScrollView) scrollView: ScrollView = null;
     isOwner = false;
     myIndex = 0;
     isReady = false;
     item = new Array<MemberUnit>();
     listRoomComponent = [];
+
+    onLoad() {
+        this.tabButtons.forEach((btn, index) => {
+            btn.node.on('click', () => {
+                this.onTabClicked(index);
+            });
+        });
+    }
+
     protected onEnable(): void {
         GlobalEvent.on('swapToken', (event) => {
             try {
@@ -69,6 +80,7 @@ export class LobbyManager extends NetworkManager {
                 }
             });
             this.room.onMessage("balance", (value) => {
+                console.log("take balance:", value);
                 MyUserInfo.instance.setMoney(value)
             })
             this.room.send("getBalance")
@@ -163,4 +175,32 @@ export class LobbyManager extends NetworkManager {
         }
 
     }
+
+    onTabClicked(index: number) {
+        console.log("Tab clicked:", index);
+
+        // TODO: Load data theo tab
+        // Hoặc thay content con của scroll view
+        this.updateScrollContent(index);
+
+        // Optional: đổi màu / scale tab
+        this.tabButtons.forEach((btn, i) => {
+            btn.interactable = i === index;
+        });
+    }
+
+    updateScrollContent(tabIndex: number) {
+        // Clear + load lại item trong scroll view
+        // const content = this.scrollView.content;
+        // content.removeAllChildren();
+
+        // // Giả sử load 5 hàng mẫu:
+        // for (let i = 0; i < 5; i++) {
+        //     const item = instantiate(this.samplePrefab); // bạn phải có samplePrefab
+        //     // set data vào item
+        //     content.addChild(item);
+        // }
+    }
+
+
 }
