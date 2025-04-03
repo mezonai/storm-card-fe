@@ -177,7 +177,7 @@ export class Player3card extends Component {
         switch (index) {
             case 1:
                 this.cardParent.angle = (90);
-                this.cardParent.setPosition(-100, 0)
+                this.cardParent.setPosition(-100, -100)
                 this.cardParent.setScale(0.6, 0.6)
                 break;
             case 2:
