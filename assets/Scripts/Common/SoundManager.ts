@@ -14,6 +14,7 @@ export class SoundManager extends Component {
     };
 
     @property({ type: AudioSource }) bgmSource: AudioSource = null;
+    @property({ type: AudioSource }) sfxSource: AudioSource = null;
     @property({ type: CCFloat }) originBgmVolume: number = 0.3;
     private bgmVolume: number = 0.3;
 
@@ -78,7 +79,7 @@ export class SoundManager extends Component {
 
     public playSfx(clip: AudioClip) {
         if (clip && this.isSfxEnabled) {
-            this.getSfxSourceFree()?.playOneShot(clip, this.sfxVolume);
+            this.sfxSource.playOneShot(clip, this.sfxVolume);
         }
     }
 

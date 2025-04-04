@@ -12,6 +12,7 @@ import { LobbyManager } from '../Lobby/LobbyManager';
 import { MyUserInfo } from '../../Common/MyUserInfo';
 import { UIManager } from '../../Common/UIManager';
 import { UIID } from '../../Common/UIID';
+import { SoundManager } from '../../Common/SoundManager';
 
 @ccclass('GameManager3card')
 export class GameManager3card extends NetworkManager {
@@ -30,7 +31,6 @@ export class GameManager3card extends NetworkManager {
     @property(Button) btnQuitRoom: Button;
     @property(Node) obj_PopUpBaoSam: Node;
     @property(Node) obj_Disconnect: Node;
-    @property(AudioSource) audioSource: AudioSource;
     @property(AudioClip) clip_Yourturn: AudioClip;
     @property(AudioClip) clip_TakeRisk: AudioClip;
 
@@ -116,7 +116,7 @@ export class GameManager3card extends NetworkManager {
             if (this.room.state.currTurn == this.listPlayerComponent[j].myIndex) {
                 turnTmp = true
                 if (this.listPlayerComponent[j].sessionId == this.room.sessionId) {
-                    this.audioSource.playOneShot(this.clip_Yourturn)
+                    SoundManager.instance.playSfx(this.clip_Yourturn)
                     console.log('play sounddđ')
                 }
             }
@@ -251,7 +251,7 @@ export class GameManager3card extends NetworkManager {
             if (value.hasOwnProperty("state")) {
                 switch (value.state) {
                     case 1:
-                        this.audioSource.playOneShot(this.clip_TakeRisk)
+                        SoundManager.instance.playSfx(this.clip_TakeRisk)
                         break;
                 }
             }
