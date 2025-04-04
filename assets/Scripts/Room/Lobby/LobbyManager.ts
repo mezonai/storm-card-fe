@@ -141,7 +141,10 @@ export class LobbyManager extends NetworkManager {
         this.obj_BtnCreate.active = true;
     }
     click_ClosePopupRoom() {
-        this.obj_PopupCreateRoom.active = false;
+        // this.obj_PopupCreateRoom.active = false;
+        this.txt_Warning.string = '';
+        this.input_RoomBetAmount.string = '';
+        this.input_RoomName.string = '';
     }
     click_ConfirmCreat() {
         const value = this.input_RoomBetAmount.string.trim();

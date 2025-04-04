@@ -278,15 +278,21 @@ export class GameManager3card extends NetworkManager {
         this.room.onLeave(async (code) => {
             window.Mezon.WebView.postEvent("LEAVE_ROOM", {});
             console.log("onLeave:", code);
-            if (1001 <= code && 1015 >= code) {
-                // Xóa localStorage
-                sys.localStorage.removeItem("lastRoomId");
-                sys.localStorage.removeItem("lastSessionId");
-                this.obj_Disconnect.active = true;
-                GlobalEvent.emit('backToLobby-event');
-            } else {
+
+
+            // Trường hợp mất kết nối bất ngờ → thử reconnect
+            if (1001 <= code && 1015 >= code && code !== 1006) {
                 console.log("Mất kết nối => tryReconnect");
                 await this.tryReconnect();
+            } else if (code === 1006) {
+                this.obj_Disconnect.active = true;
+                GlobalEvent.emit('backToLobby-event');
+            }
+            else { // Trường hợp rời chủ động
+                sys.localStorage.removeItem("lastRoomId");
+                sys.localStorage.removeItem("lastSessionId");
+                // this.obj_Disconnect.active = true;
+                GlobalEvent.emit('backToLobby-event');
             }
         });
 
