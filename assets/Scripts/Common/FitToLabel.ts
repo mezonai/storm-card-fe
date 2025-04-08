@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Label, UITransform, Vec3, Enum, XrKeyboardEventType } from 'cc';
+import { _decorator, Component, Node, Label, UITransform, Vec3, Enum, XrKeyboardEventType, CCFloat } from 'cc';
 const { ccclass, property } = _decorator;
 
 
@@ -19,7 +19,7 @@ export class FitToLabel extends Component {
     @property({ type: Enum(FitAlign) })
     alignment: FitAlign = FitAlign.CENTER;
 
-    @property()
+    @property({ type: CCFloat })
     defaultWidth: number = 0;
 
     onLoad() {

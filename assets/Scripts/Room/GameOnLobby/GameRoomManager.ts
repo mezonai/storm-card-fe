@@ -3,10 +3,10 @@ import { GameManager3card } from '../Game/GameManager3card';
 import { MemberUnit } from '../Lobby/MemberUnit';
 import { NetworkManager } from '../../Network/NetworkManager';
 import * as GlobalVariable from '../../Common/GlobalVariable';
-import { LobbyManager } from '../Lobby/LobbyManager';
 import GlobalEvent from '../../Common/GlobalEvent';
 import { warning } from '../../Common/warning';
 import { MyUserInfo } from '../../Common/MyUserInfo';
+import { LobbyManager } from '../Lobby/LobbyManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('GameRoomManager')
@@ -24,7 +24,6 @@ export class GameRoomManager extends NetworkManager {
     @property({ type: Label }) txt_RoomName: Label = null;
     @property(Node) obj_Disconnect: Node;
     @property({ type: warning }) sc_Warning: warning = null;
-
     isOwner = false;
     myIndex = 0;
     isReady = false;

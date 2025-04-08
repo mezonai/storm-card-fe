@@ -71,6 +71,7 @@ export class LobbyManager extends NetworkManager {
     public async joinLobby() {
         try {
             await this.createNewRoom(GlobalVariable.lobbyRoom, { userName: GlobalVariable.myMezonInfo.name, userId: GlobalVariable.myMezonInfo.id }, true);
+            console.log('this.room, ', this.room)
             this.room.state.players.onAdd(this.checkRoom.bind(this), false)
             this.room.state.players.onRemove(this.checkRoom.bind(this), false)
             window.Mezon.WebView.onEvent('SEND_TOKEN_RESPONSE_SUCCESS', (type, data) => {
@@ -87,6 +88,10 @@ export class LobbyManager extends NetworkManager {
                 console.log("take balance:", value);
                 MyUserInfo.instance.setMoney(value)
             })
+            this.room.onMessage("roomCreated", (value) => {
+                console.log("roomCreated:", value);
+                this.checkRoom();
+            })
             this.room.send("getBalance")
         } catch (e) {
             console.error(e);
@@ -95,7 +100,7 @@ export class LobbyManager extends NetworkManager {
         return true;
     }
     async checkRoom() {
-        let listRoom = await this.getRoom()
+        let listRoom = await this.getRoom(GlobalVariable.gameInLobby)
         this.genRoom(listRoom)
     }
     genRoom(listRoom) {
