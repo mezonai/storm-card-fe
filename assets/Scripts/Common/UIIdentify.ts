@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, Enum, Node, tween, Tween, Vec3, Widget } from "cc";
+import { _decorator, Button, CCBoolean, Component, Enum, Node, tween, Tween, Vec3, Widget } from "cc";
 import { UIID } from "./UIID";
 const { ccclass, property } = _decorator;
 
@@ -22,8 +22,8 @@ export class UIIdentify extends Component {
     @property({ type: Button }) public btnCloses: Button[] = [];
     @property({ type: [AttachNodeData] }) public attachNodes: AttachNodeData[] = [];
 
-    @property({ type: Boolean }) public isPopup: boolean = false;
-    @property({ type: Boolean }) public isShowOnFrontest: boolean = true;
+    @property({ type: CCBoolean  }) public isPopup: boolean;
+    @property({ type: CCBoolean  }) public isShowOnFrontest: boolean;
     public originScale: Vec3 = Vec3.ONE;
 
     protected start(): void {

@@ -475,7 +475,9 @@ export class GameManager3card extends NetworkManager {
 
                 if (state.currTurn == this.myIndex) {
                     this.btnPlayCard.node.active = true;
-                    this.btnPassTurn.node.active = true;
+
+                    const isFirstTurn = state.lastCards.length === 0;
+                    this.btnPassTurn.node.active = !isFirstTurn;
                 } else {
                     this.btnPlayCard.node.active = false;
                     this.btnPassTurn.node.active = false;

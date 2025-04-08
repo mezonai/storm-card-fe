@@ -6,7 +6,7 @@ const { ccclass, property } = _decorator;
 
 @ccclass('RankIconData')
 export class RankIconData {
-    @property({ type: CCString }) rankName: string = "";
+    @property({ type: CCString }) rankName: string;
     @property({ type: SpriteFrame }) icon;
     @property({ type: CCFloat }) offsetY: number = 0;
 }

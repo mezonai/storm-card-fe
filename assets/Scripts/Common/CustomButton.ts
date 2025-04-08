@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, Enum, Node, tween, Vec3 } from "cc";
+import { _decorator, Button, CCBoolean, Component, Enum, Node, tween, Vec3 } from "cc";
 import { UIID } from "./UIID";
 import { UIManager } from "./UIManager";
 
@@ -13,7 +13,7 @@ export default class CustomButton extends Component {
     }) public uiAttached: UIID = UIID.None;
 
     @property({
-        type: Boolean
+        type: CCBoolean 
     }) public isInteractEffect: boolean = true;
 
     @property({
