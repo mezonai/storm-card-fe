@@ -227,6 +227,9 @@ export class Player3card extends Component {
             frequencyMap.set(obj.number, count + 1);
         });
 
+        // Hàm hỗ trợ để so sánh giá trị: Ace (1) sẽ được coi như 14
+        const getSortValue = (num: number) => (num === 1 ? 14 : num);
+
         // Hàm so sánh tùy thuộc vào option
         return array.sort((a, b) => {
             const freqA = frequencyMap.get(a.number) || 0;
@@ -240,12 +243,12 @@ export class Player3card extends Component {
             }
 
             if (option === 0) {
-                // Ưu tiên chuỗi số tăng dần
-                return a.number - b.number;
+                // Ưu tiên chuỗi số tăng dần nhưng Ace cuối
+                return getSortValue(a.number) - getSortValue(b.number);
             }
 
-            // Khi không có ưu tiên rõ ràng, sắp xếp tăng dần mặc định
-            return a.number - b.number;
+            // Khi không có ưu tiên rõ ràng
+            return getSortValue(a.number) - getSortValue(b.number);
         });
     }
 }

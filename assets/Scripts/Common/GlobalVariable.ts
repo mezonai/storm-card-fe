@@ -7,6 +7,7 @@ export const gameInLobby = 'game_room_lobby';
 export const gameRoom = 'game_room';
 export const botId = '1840670551069167616';
 export const botName = 'Bot Sâm';
+export const maxBetAmount = 10000;
 
 export const clientNum = {
     value: 0,

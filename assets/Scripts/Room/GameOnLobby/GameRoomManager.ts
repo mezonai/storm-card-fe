@@ -22,6 +22,7 @@ export class GameRoomManager extends NetworkManager {
     @property({ type: Node }) obj_GameRoomLobby: Node = null;
     @property({ type: Node }) obj_Lobby: Node = null;
     @property({ type: Label }) txt_RoomName: Label = null;
+    @property({ type: Label }) txt_RoomBetAmount: Label = null;
     @property(Node) obj_Disconnect: Node;
     @property({ type: warning }) sc_Warning: warning = null;
     isOwner = false;
@@ -96,6 +97,10 @@ export class GameRoomManager extends NetworkManager {
 
             this.room.state.listen("roomName", (value, oldValue) => {
                 this.txt_RoomName.string = 'Phòng: ' + this.room.state.roomName
+            })
+
+            this.room.state.listen("betAmount", (value, oldValue) => {
+                this.txt_RoomBetAmount.string = 'Mức cược: ' + this.room.state.betAmount + ' GOLD';
             })
             this.room.send("getBalance")
 

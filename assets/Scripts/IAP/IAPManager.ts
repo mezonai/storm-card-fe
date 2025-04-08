@@ -1,6 +1,8 @@
 import { _decorator, Component, Node } from 'cc';
 import * as GlobalVariable from '../Common/GlobalVariable';
 import GlobalEvent from '../Common/GlobalEvent';
+import { UIManager } from '../Common/UIManager';
+import { UIID } from '../Common/UIID';
 const { ccclass, property } = _decorator;
 
 @ccclass('IAPManager')
@@ -31,5 +33,6 @@ export class IAPManager extends Component {
 
     getMezon(balance) {
         GlobalEvent.emit('swapToken', { user: GlobalVariable.myMezonInfo.id, balance: balance })
+        UIManager.Instance.HideUI(UIID.SwapTokenPopup);
     }
 }

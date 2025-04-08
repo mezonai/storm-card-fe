@@ -169,7 +169,7 @@ export class LobbyManager extends NetworkManager {
             return;
         }
         const betAmount = parseInt(this.input_RoomBetAmount.string.trim(), 10);
-        if (isNaN(betAmount) || betAmount > 10000) {
+        if (isNaN(betAmount) || betAmount > GlobalVariable.maxBetAmount) {
             console.warn('Mức cược không hợp lệ!');
             this.txt_Warning.string = 'Mức cược tối đa là 10,000!';
             return;
