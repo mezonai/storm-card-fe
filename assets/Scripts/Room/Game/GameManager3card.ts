@@ -26,6 +26,7 @@ export class GameManager3card extends NetworkManager {
     @property(Button) btnPlayCard: Button;
     @property(Button) btnPassTurn: Button;
     @property(Button) btnReady: Button;
+    @property({ type: Label }) txt_BtnReadyName: Label = null;
     @property(Button) btnOrder: Button;
     @property(Button) btnBaoSam: Button;
     @property(Button) btnQuitRoom: Button;
@@ -168,6 +169,13 @@ export class GameManager3card extends NetworkManager {
             }
         });
         player.listen('isReady', (value) => {
+            if (player.sessionId == this.room.sessionId && !player.isOwner) {
+                if (value) {
+                    this.txt_BtnReadyName.string = "Đã Sẵn Sàng!"
+                } else {
+                    this.txt_BtnReadyName.string = "Sẵn Sàng"
+                }
+            }
             for (let j = 0; j < this.listPlayerComponent.length; j++) {
                 if (this.listPlayerComponent[j].sessionId == player.sessionId) {
                     this.listPlayerComponent[j]?.setIsReady(player.isReady);

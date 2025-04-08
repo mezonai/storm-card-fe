@@ -11810,6 +11810,9 @@
     "btnReady": {
       "__id__": 338
     },
+    "txt_BtnReadyName": {
+      "__id__": 342
+    },
     "btnOrder": {
       "__id__": 297
     },
