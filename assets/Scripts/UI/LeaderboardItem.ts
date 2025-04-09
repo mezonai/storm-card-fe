@@ -9,7 +9,9 @@ export class LeaderboardItem extends Component {
     @property(Label) labelName: Label = null!;
     @property(Label) labelScore: Label = null!;
 
-    @property(SpriteFrame) top1to3Frame: SpriteFrame = null!;
+    @property(SpriteFrame) top1Frame: SpriteFrame = null!;
+    @property(SpriteFrame) top2Frame: SpriteFrame = null!;
+    @property(SpriteFrame) top3Frame: SpriteFrame = null!;
     @property(SpriteFrame) defaultFrame: SpriteFrame = null!;
     @property(SpriteFrame) selfFrame: SpriteFrame = null!;
 
@@ -19,14 +21,27 @@ export class LeaderboardItem extends Component {
         this.labelScore.string = score.toString();
         // Xử lý hiển thị icon top 1, 2, 3
         if (this.iconRank) {
+            console.log('rank', rank)
             this.iconRank.node.active = rank <= 3;
             // Có thể thay spriteFrame theo rank nếu muốn
+            switch (rank) {
+                case 1:
+                    this.iconRank.spriteFrame = this.top1Frame;
+                    break;
+                case 2:
+                    this.iconRank.spriteFrame = this.top2Frame;
+                    break;
+                case 3:
+                    this.iconRank.spriteFrame = this.top3Frame;
+                    break;
+                case 3:
+                    this.iconRank.node.active = false;
+                    break;
+            }
         }
 
         if (isSelf || isYourRank) {
             this.bgSprite.spriteFrame = this.selfFrame;
-        } else if (rank >= 1 && rank <= 3) {
-            this.bgSprite.spriteFrame = this.top1to3Frame;
         } else {
             this.bgSprite.spriteFrame = this.defaultFrame;
         }
