@@ -35,7 +35,7 @@ export class GameManager3card extends NetworkManager {
     @property(AudioClip) clip_Yourturn: AudioClip;
     @property(AudioClip) clip_TakeRisk: AudioClip;
 
-    cardComponent = [];
+    cardComponent: Card[] = [];
     @property(Node) cardParent;
     @property(Prefab) pre_Card;
 
@@ -381,6 +381,7 @@ export class GameManager3card extends NetworkManager {
         }
         this.listPlayerComponent.push(playerComponent)
     }
+
     showLastCard() {
         if (this.cardComponent.length == 10)
             for (let i = 0; i < 10; i++) {
