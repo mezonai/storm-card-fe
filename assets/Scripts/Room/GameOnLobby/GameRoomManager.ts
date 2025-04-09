@@ -163,7 +163,7 @@ export class GameRoomManager extends NetworkManager {
             this.room.state.listen("roomName", (value, oldValue) => {
                 this.txt_RoomName.string = 'Phòng: ' + this.room.state.roomName
             })
-            // this.room.send("getBalance")
+            this.room.send("getBalance")
 
             this.room.state.players.onAdd(this.addNewClient.bind(this), false)
             this.room.state.players.onRemove(this.reMoveClient.bind(this), false)
