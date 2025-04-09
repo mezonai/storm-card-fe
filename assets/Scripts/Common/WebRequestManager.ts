@@ -1,6 +1,6 @@
 import { _decorator, Component, Node } from 'cc';
 import { APIManager } from './APIManager';
-import APIConstant from './APIConstant';
+import APIConstant, { SERVICE_KEY } from './APIConstant';
 const { ccclass, property } = _decorator;
 
 @ccclass('WebRequestManager')
@@ -17,9 +17,37 @@ export class WebRequestManager extends Component {
     private combineWithSlash(...params: string[]): string {
         return params.join('/');
     }
+
     public loginMezon(data, successCallback, errorCallback) {
-        APIManager.postData(this.combineWithSlash(APIConstant.USER, APIConstant.LOGIN_MEZON), data, (data) => { this.onSuccessHandler(data, successCallback, errorCallback); }, (data) => { this.onErrorHandler(data, errorCallback); }, false);
+        APIManager.postData(
+            SERVICE_KEY.USER_SERVICE,
+            this.combineWithSlash(APIConstant.USER, APIConstant.LOGIN_MEZON),
+            data,
+            (data) => this.onSuccessHandler(data, successCallback, errorCallback),
+            (data) => this.onErrorHandler(data, errorCallback),
+            false
+        );
     }
+
+    // 🆕 Gọi leaderboard top
+    public fetchTopLeaderboard(
+        type: string,
+        period: string = 'daily',
+        limit: number = 10,
+        currentUserId: string,
+        successCallback: (res) => void,
+        errorCallback: (err) => void
+    ) {
+        const query = this.combineWithSlash(APIConstant.LEADERBOARD, APIConstant.TOP) + `?type=${type}&period=${period}&limit=${limit}&currentUserId=${currentUserId}`;
+        APIManager.getData(
+            SERVICE_KEY.GAME_SERVICE,
+            query,
+            (data) => this.onSuccessHandler(data, successCallback, errorCallback),
+            (err) => this.onErrorHandler(err, errorCallback),
+            false
+        );
+    }
+
     private onSuccessHandler(response, onSuccess: (response: string) => void, onError, needShowPopupWhenError: boolean = true) {
         if (!response.error_message) {
             onSuccess(response);

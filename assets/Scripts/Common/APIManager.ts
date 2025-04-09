@@ -4,41 +4,33 @@ const { ccclass, property } = _decorator;
 
 @ccclass('APIManager')
 export class APIManager extends Component {
-    private static getPath(api: string): string {
-        return APIConfig.ip + api;
+    private static getPath(serviceKey: keyof typeof APIConfig.BASE_URLS, api: string): string {
+        return APIConfig.BASE_URLS[serviceKey] + api;
     }
-    public static getData(path, successCallback, errorCallback, needAuth) {
-        let param = {};
-        let json = JSON.stringify(param);
-        let out = this.callGet(this.getPath(path), json, needAuth)
-        out.then(function (result) {
-            successCallback(result);
-        }).catch(function (result) {
-            errorCallback(result);
-        });
+    public static getData(serviceKey, path, successCallback, errorCallback, needAuth = false) {
+        const fullPath = this.getPath(serviceKey, path);
+        const json = JSON.stringify({});
+        this.callGet(fullPath, json, needAuth)
+            .then(successCallback)
+            .catch(errorCallback);
     }
 
-    public static putData(param, path, successCallback, errorCallback, needAuth) {
-        let json = JSON.stringify(param);
-        let out = this.callPut(this.getPath(path), json, needAuth)
-        out.then(function (result) {
-            successCallback(result);
-        }).catch(function (result) {
-            errorCallback(result);
-        });
+    public static putData(serviceKey, path, param, successCallback, errorCallback, needAuth = false) {
+        const json = JSON.stringify(param);
+        const fullPath = this.getPath(serviceKey, path);
+        this.callPut(fullPath, json, needAuth)
+            .then(successCallback)
+            .catch(errorCallback);
     }
 
-    public static postData(path, param, callback, errorCallback, needAuth) {
-        let json = JSON.stringify(param);
-        let out1 = this.callPost(this.getPath(path), json, needAuth)
-        out1.then(function (result) {
-            callback(result)
-        }).catch(function (result) {
-            // fail logic
-            errorCallback(result);
-            //console.error("ERROR: ", result);
-        });
+    public static postData(serviceKey, path, param, successCallback, errorCallback, needAuth = false) {
+        const json = JSON.stringify(param);
+        const fullPath = this.getPath(serviceKey, path);
+        this.callPost(fullPath, json, needAuth)
+            .then(successCallback)
+            .catch(errorCallback);
     }
+
     private static callGet(url, param, needAuth = true) {
         return this.xmlBase('GET', url, param, needAuth);
     }
@@ -50,6 +42,7 @@ export class APIManager extends Component {
     }
 
     private static xmlBase(method, url, param, needAuth = true, callPrivy = false, privyToken = null) {
+        console.log('xmlBase ', url)
         return new Promise(function (resolve, reject) {
             let http = new XMLHttpRequest();
             http.open(method, url, true);

@@ -6,13 +6,28 @@ export default class APIConstant {
     static LOGIN: string = "login";
     static LOGIN_PRIVY: string = "login-privy";
     static LOGIN_MEZON: string = "login-mezon";
+
+    // Leaderboard endpoint
+    static LEADERBOARD = "leaderboard";
+    static TOP = "top";
 }
 
 export class APIConfig {
-    static token: string = "";
-    // static ip: string = "http://172.16.10.16:5000/api/v1/"; //Linh
-    static ip: string = "https://gameuser-server.nccsoft.vn/api/v1/"; // Tuyen
-    // static ip: string = "http://10.10.41.239:5008/api/v1/"; // Tuyen
-    //static ip: string = "https://trumpclicker-api.ncc.studio/api/v1/";
-    // static ip: string = "https://api.megamaga.fun/api/v1/";
+    static token = "";
+
+    static BASE_URLS = {
+        USER_SERVICE: "https://gameuser-server.nccsoft.vn/api/v1/",
+        GAME_SERVICE: "http://localhost:2567/api/",
+    };
+
+    // Nếu cần token riêng cho từng service sau này:
+    static SERVICE_TOKENS = {
+        USER_SERVICE: "",
+        GAME_SERVICE: "",
+    };
+}
+
+export enum SERVICE_KEY {
+    USER_SERVICE = 'USER_SERVICE',
+    GAME_SERVICE = 'GAME_SERVICE',
 }

@@ -9,4 +9,5 @@ export enum UIID {
     SwapTokenPopup = 7,
     ReconnectPopup = 8,
     CreateGamePopup = 9,
+    UILeaderboard = 10
 }

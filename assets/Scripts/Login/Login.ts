@@ -5,6 +5,8 @@ import { WebRequestManager } from '../Common/WebRequestManager';
 import { UserLoginDTO } from '../Common/DataDTO';
 import { APIConfig } from '../Common/APIConstant';
 import { MyUserInfo } from '../Common/MyUserInfo';
+import { UIManager } from '../Common/UIManager';
+import { UIID } from '../Common/UIID';
 const { ccclass, property } = _decorator;
 
 @ccclass('Login')
@@ -35,9 +37,10 @@ export class Login extends Component {
             console.log(loginData)
             WebRequestManager.instance.loginMezon(loginData, (response) => this.onLoginSuccess(response), (error) => this.onError(error))
         });
+
     }
     private onLoginSuccess(userData: UserLoginDTO) {
-        console.log(userData)
+        console.log('onLoginSuccess', userData)
         APIConfig.token = userData.data.accessToken;
         this.joinByMezon()
     }
@@ -58,8 +61,11 @@ export class Login extends Component {
     }
 
     async joinByMezon() {
+        console.log('joinByMezon')
         let isJoined = false;
+        UIManager.Instance.showUI(UIID.UILeaderboard);
         isJoined = await this.lobby.joinLobby();
+        
         if (isJoined) {
             this.loginBoard.active = false;
             this.lobbyNode.active = true;
