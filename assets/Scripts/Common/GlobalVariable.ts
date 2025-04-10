@@ -1,7 +1,7 @@
-// export const hostname = "game-sam-api.nccsoft.vn";
-export const hostname = "localhost";
+export const hostname = "game-sam-api.nccsoft.vn";
+// export const hostname = "localhost";
 export const port = 2567;
-export const useSSL = false;
+export const useSSL = true;
 export const lobbyRoom = 'lobby_room';
 export const gameInLobby = 'game_room_lobby';
 export const gameRoom = 'game_room';

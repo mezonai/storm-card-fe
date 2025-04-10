@@ -48,6 +48,24 @@ export class WebRequestManager extends Component {
         );
     }
 
+    // 🆕 Gọi leaderboard top
+    public fetchTopLeaderboardVolatile(
+        period: string = 'daily',
+        currentUserId: string,
+        successCallback: (res) => void,
+        errorCallback: (err) => void
+    ) {
+        const query = this.combineWithSlash(APIConstant.LEADERBOARD, APIConstant.TOP_VOLATILE) + `?period=${period}&currentUserId=${currentUserId}`;
+        APIManager.getData(
+            SERVICE_KEY.GAME_SERVICE,
+            query,
+            (data) => this.onSuccessHandler(data, successCallback, errorCallback),
+            (err) => this.onErrorHandler(err, errorCallback),
+            false
+        );
+    }
+
+
     private onSuccessHandler(response, onSuccess: (response: string) => void, onError, needShowPopupWhenError: boolean = true) {
         if (!response.error_message) {
             onSuccess(response);

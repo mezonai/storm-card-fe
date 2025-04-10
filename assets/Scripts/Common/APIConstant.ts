@@ -10,6 +10,7 @@ export default class APIConstant {
     // Leaderboard endpoint
     static LEADERBOARD = "leaderboard";
     static TOP = "top";
+    static TOP_VOLATILE = "top-volatile";
 }
 
 export class APIConfig {
@@ -17,7 +18,8 @@ export class APIConfig {
 
     static BASE_URLS = {
         USER_SERVICE: "https://gameuser-server.nccsoft.vn/api/v1/",
-        GAME_SERVICE: "http://localhost:2567/api/",
+        // GAME_SERVICE: "http://localhost:2567/api/",
+        GAME_SERVICE: "https://game-sam-api.nccsoft.vn/api/",
     };
 
     // Nếu cần token riêng cho từng service sau này:

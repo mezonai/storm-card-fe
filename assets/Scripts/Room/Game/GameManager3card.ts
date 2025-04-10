@@ -61,6 +61,7 @@ export class GameManager3card extends NetworkManager {
             if (this.room && this.room.id && this.room.sessionId) {
                 sys.localStorage.setItem("lastRoomId", this.room.id);
                 sys.localStorage.setItem("lastSessionId", this.room.sessionId);
+                sys.localStorage.setItem("reconnectionToken", this.room.reconnectionToken);
             }
         };
     }
@@ -233,6 +234,8 @@ export class GameManager3card extends NetworkManager {
         // Lưu roomId/sessionId
         sys.localStorage.setItem("lastRoomId", this.room.id);
         sys.localStorage.setItem("lastSessionId", this.room.sessionId);
+        sys.localStorage.setItem("reconnectionToken", this.room.reconnectionToken);
+        
         this.room.onStateChange((state) => {
             this.handleState(state);
         });
@@ -294,11 +297,15 @@ export class GameManager3card extends NetworkManager {
                 await this.tryReconnect();
             } else if (code === 1006) {
                 this.obj_Disconnect.active = true;
+                sys.localStorage.removeItem("lastRoomId");
+                sys.localStorage.removeItem("lastSessionId");
+                sys.localStorage.removeItem("reconnectionToken");
                 GlobalEvent.emit('backToLobby-event');
             }
             else { // Trường hợp rời chủ động
                 sys.localStorage.removeItem("lastRoomId");
                 sys.localStorage.removeItem("lastSessionId");
+                sys.localStorage.removeItem("reconnectionToken");
                 // this.obj_Disconnect.active = true;
                 GlobalEvent.emit('backToLobby-event');
             }
@@ -320,7 +327,8 @@ export class GameManager3card extends NetworkManager {
     private async tryReconnect() {
         const lastRoomId = sys.localStorage.getItem("lastRoomId");
         const lastSessionId = sys.localStorage.getItem("lastSessionId");
-        if (!lastRoomId || !lastSessionId) {
+        const reconnectionToken = sys.localStorage.getItem("reconnectionToken");
+        if (!lastRoomId || !lastSessionId || !reconnectionToken) {
             console.log("Không có room cũ => thoát lobby");
             this.obj_Disconnect.active = true;
             GlobalEvent.emit('backToLobby-event');
@@ -330,7 +338,7 @@ export class GameManager3card extends NetworkManager {
         try {
             UIManager.Instance.showUI(UIID.ReconnectPopup);
             console.log("Thử reconnect =>", lastRoomId, lastSessionId);
-            const oldRoom = await this.client.reconnect(lastRoomId, lastSessionId);
+            const oldRoom = await this.client.reconnect(reconnectionToken);
             console.log("Reconnect thành công => oldRoom:", oldRoom);
 
             this.room = oldRoom;
@@ -344,7 +352,7 @@ export class GameManager3card extends NetworkManager {
             // Xóa localStorage
             sys.localStorage.removeItem("lastRoomId");
             sys.localStorage.removeItem("lastSessionId");
-
+            sys.localStorage.removeItem("reconnectionToken");
             this.obj_Disconnect.active = true;
             GlobalEvent.emit('backToLobby-event');
         }
