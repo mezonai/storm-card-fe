@@ -12,6 +12,7 @@ export class LeaderboardUi extends Component {
     @property(Button) tabEarned: Button;
     @property(Button) tabLose: Button;
     @property(Button) tabLost: Button;
+    @property(Button) btnAll: Button;
     @property(Button) btnDaily: Button;
     @property(Button) btnWeekly: Button;
     @property(Node) contentContainer: Node;
@@ -22,7 +23,7 @@ export class LeaderboardUi extends Component {
     @property(ScrollView) scrollView: ScrollView;
 
     private currentType: string = 'volatile';
-    private currentPeriod: string = 'daily';
+    private currentPeriod: string = 'all';
     private currentUserId: string = '';
     private pool: Node[] = [];
     private loadedCount: number = 0;
@@ -33,12 +34,12 @@ export class LeaderboardUi extends Component {
         this.scrollView.node.on('scrolling', this.onScroll, this);
         this.initItem();
         this.initButtonListeners();
-        this.updatePeriodHighlight();
         // this.showTabVolatile(this.currentType, this.currentPeriod);
     }
 
     protected onEnable(): void {
         this.showTabVolatile(this.currentType, this.currentPeriod);
+        this.updatePeriodHighlight(this.currentPeriod);
     }
 
     onDestroy() {
@@ -74,7 +75,7 @@ export class LeaderboardUi extends Component {
 
     showPeriod(period: string) {
         this.currentPeriod = period;
-        this.updatePeriodHighlight();
+        this.updatePeriodHighlight(period);
         this.currentType === 'volatile' ? this.fetchLeaderboardVolatile(period) : this.fetchLeaderboard(this.currentType, period);
     }
 
@@ -96,7 +97,20 @@ export class LeaderboardUi extends Component {
         });
     }
 
-    private updatePeriodHighlight() {
+    private updatePeriodHighlight(selectedPeriod: string) {
+        const periodMap = [
+            { period: 'all', button: this.btnAll },
+            { period: 'daily', button: this.btnDaily },
+            { period: 'weekly', button: this.btnWeekly },
+        ];
+
+        periodMap.forEach(({ period, button }) => {
+            const isSelected = period === selectedPeriod;
+            const sprite = button.getComponent(Sprite);
+            if (sprite) {
+                sprite.color = new Color(sprite.color.r, sprite.color.g, sprite.color.b, isSelected ? 255 : 100);
+            }
+        });
         const dailySprite = this.btnDaily.getComponent(Sprite);
         const weeklySprite = this.btnWeekly.getComponent(Sprite);
 
@@ -201,6 +215,7 @@ export class LeaderboardUi extends Component {
     onClickLostTab() { this.showTab('moneyLost'); }
 
     // Gắn vào button chuyển chế độ
+    onClickAll() { this.showPeriod('all'); }
     onClickDaily() { this.showPeriod('daily'); }
     onClickWeekly() { this.showPeriod('weekly'); }
 
@@ -211,6 +226,7 @@ export class LeaderboardUi extends Component {
         this.tabLose.node.on(Button.EventType.CLICK, this.onClickLoseTab, this);
         this.tabLost.node.on(Button.EventType.CLICK, this.onClickLostTab, this);
 
+        this.btnAll.node.on(Button.EventType.CLICK, this.onClickAll, this);
         this.btnDaily.node.on(Button.EventType.CLICK, this.onClickDaily, this);
         this.btnWeekly.node.on(Button.EventType.CLICK, this.onClickWeekly, this);
     }
@@ -222,6 +238,7 @@ export class LeaderboardUi extends Component {
         this.tabLose.node.off(Button.EventType.CLICK, this.onClickLoseTab, this);
         this.tabLost.node.off(Button.EventType.CLICK, this.onClickLostTab, this);
 
+        this.btnAll.node.off(Button.EventType.CLICK, this.onClickAll, this);
         this.btnDaily.node.off(Button.EventType.CLICK, this.onClickDaily, this);
         this.btnWeekly.node.off(Button.EventType.CLICK, this.onClickWeekly, this);
     }
