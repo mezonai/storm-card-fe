@@ -4,6 +4,7 @@
 
   /* Add your custom configuration here. */
   "compilerOptions": {
+    "lib": ["es2016", "dom"],
     "strict": false,
     "esModuleInterop": true
   }
