@@ -377,7 +377,7 @@
     "_priority": 0,
     "_fov": 45,
     "_fovAxis": 0,
-    "_orthoHeight": 368.91108891108894,
+    "_orthoHeight": 360,
     "_near": 0,
     "_far": 1000,
     "_color": {
@@ -37115,7 +37115,7 @@
     ],
     "attachNodes": [],
     "isPopup": true,
-    "isShowOnFrontest": false,
+    "isShowOnFrontest": true,
     "_id": "52qRd1e+1EK762gULqGQcg"
   },
   {
