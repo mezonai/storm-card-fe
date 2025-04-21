@@ -26,7 +26,7 @@ export class NetworkManager extends Component {
         this.room = await this.client.joinById(id, options)
     }
 
-    public async getRoom(roomName: string) {
-        return await this.client.getAvailableRooms(roomName);
+    public async getRoom() {
+        return await this.client.getAvailableRooms();
     }
 }

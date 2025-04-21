@@ -30,6 +30,8 @@ export class GameManager3card extends NetworkManager {
     @property(Button) btnOrder: Button;
     @property(Button) btnBaoSam: Button;
     @property(Button) btnQuitRoom: Button;
+    @property(Button) btnSitDown: Button;
+    @property(Button) btnStandUp: Button;
     @property(Node) obj_PopUpBaoSam: Node;
     @property(Node) obj_Disconnect: Node;
     @property(AudioClip) clip_Yourturn: AudioClip;
@@ -43,7 +45,7 @@ export class GameManager3card extends NetworkManager {
     room!: Colyseus.Room;
     myIndex: number;
     myPlayer: Player3card;
-    listPlayerComponent = [];
+    listPlayerComponent: Player3card[] = [];
     isMyturn: boolean;
     listCardChoosed = [];
     listPlayerJoinRoom = [];
@@ -117,7 +119,7 @@ export class GameManager3card extends NetworkManager {
             let turnTmp = false;
             if (this.room.state.currTurn == this.listPlayerComponent[j].myIndex) {
                 turnTmp = true
-                if (this.listPlayerComponent[j].sessionId == this.room.sessionId) {
+                if (this.listPlayerComponent[j].sessionId == this.room.sessionId && this.room.state.phase !== GamePhase.WAITING) {
                     SoundManager.instance.playSfx(this.clip_Yourturn)
                     console.log('play sounddđ')
                 }
@@ -131,10 +133,10 @@ export class GameManager3card extends NetworkManager {
         // console.log('adddd player', player.sessionId)
         // console.log('listPlayerJoinRoom ', this.listPlayerJoinRoom.length, " ", GlobalVariable.clientNum.value)
         this.listPlayerJoinRoom.push(player)
-        console.log('listPlayerJoinRoom ', this.listPlayerJoinRoom)
+        console.log('addNewPlayer listPlayerJoinRoom ', this.listPlayerJoinRoom)
         if (player.sessionId == this.room.sessionId) {
             this.myIndex = player.index;
-            console.log('this.myIndex ', this.myIndex)
+            console.log('addNewPlayer this.myIndex ', this.myIndex)
             console.log('this.room.state.players.length ', this.room.state.players.length)
         }
 
@@ -154,7 +156,7 @@ export class GameManager3card extends NetworkManager {
             }
         }
 
-        player.listen('cardLeftNum', (value, previousValue) => {
+        this.room.state.listen('cardLeftNum', (value, previousValue) => {
             if (this.room.state.phase == GamePhase.INSESSION || this.room.state.phase == GamePhase.WAITFORENDSESSION || this.room.state.phase == GamePhase.WAITFORTAKERISK)
                 for (let j = 0; j < this.listPlayerComponent.length; j++) {
                     if (this.listPlayerComponent[j].sessionId == player.sessionId && player.sessionId != this.myPlayer.sessionId) {
@@ -162,14 +164,14 @@ export class GameManager3card extends NetworkManager {
                     }
                 }
         });
-        player.listen('money', (value, previousValue) => {
+        this.room.state.listen('money', (value, previousValue) => {
             for (let j = 0; j < this.listPlayerComponent.length; j++) {
                 if (this.listPlayerComponent[j].sessionId == player.sessionId) {
                     this.listPlayerComponent[j].showMoney(player.money)
                 }
             }
         });
-        player.listen('isReady', (value) => {
+        this.room.state.listen('isReady', (value) => {
             if (player.sessionId == this.room.sessionId && !player.isOwner) {
                 if (value) {
                     this.txt_BtnReadyName.string = "Đã Sẵn Sàng!"
@@ -185,13 +187,15 @@ export class GameManager3card extends NetworkManager {
         })
 
         //show money when new player joined
-        for (let i = 0; i < this.room.state.players.length; i++)
+        for (let i = 0; i < this.room.state.players.length; i++) {
             for (let j = 0; j < this.listPlayerComponent.length; j++) {
                 if (this.listPlayerComponent[j].sessionId == this.room.state.players[i].sessionId) {
                     console.log(player.money, this.listPlayerComponent[j].sessionId)
                     this.listPlayerComponent[j].showMoney(this.room.state.players[i].money)
                 }
             }
+        }
+        this.checkSitBtn();
     }
     removePlayer(player, index) {
         // console.log('removePlayer ', index)
@@ -208,13 +212,30 @@ export class GameManager3card extends NetworkManager {
             }
         }
         if (player.index < this.myIndex && this.myIndex > 0) this.myIndex--
-        console.log('myindex: ', this.myIndex)
+        console.log('removePlayer myindex: ', this.myIndex)
         for (let j = 0; j < this.listPlayerComponent.length; j++) {
             this.listPlayerComponent[j].updateMyIndex(player.index)
         }
         // if (this.listPlayerComponent.length <= 1) {
         //     this.obj_Disconnect.active = true;
         // }
+        this.checkSitBtn();
+    }
+
+    private renderSpectators() {
+        // clear container
+        console.log('renderSpectators this.room.state.spectators.length ', this.room.state.spectators.length)
+        this.checkSitBtn();
+    }
+
+    /** Kiểm tra xem chính client này có đang là player trong room.state.players hay không */
+    private isPlaying(): boolean {
+        return this.room.state.players.some(p => p.sessionId === this.room.sessionId);
+    }
+
+    private checkSitBtn() {
+        this.btnSitDown.node.active = !this.isPlaying();
+        this.btnStandUp.node.active = this.isPlaying();
     }
 
     // ------------------------------------------
@@ -223,6 +244,9 @@ export class GameManager3card extends NetworkManager {
     private registerRoomEvents() {
         this.room.state.players.onAdd(this.addNewPlayer.bind(this), false)
         this.room.state.players.onRemove(this.removePlayer.bind(this), false)
+        this.room.state.spectators.onAdd(this.renderSpectators.bind(this), false)
+        this.room.state.spectators.onRemove(this.renderSpectators.bind(this), false)
+
         window.Mezon.WebView.onEvent('SEND_TOKEN_RESPONSE_SUCCESS', (type, data) => {
             console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
             this.room.send("getBalance")
@@ -235,7 +259,7 @@ export class GameManager3card extends NetworkManager {
         sys.localStorage.setItem("lastRoomId", this.room.id);
         sys.localStorage.setItem("lastSessionId", this.room.sessionId);
         sys.localStorage.setItem("reconnectionToken", this.room.reconnectionToken);
-        
+
         this.room.onStateChange((state) => {
             this.handleState(state);
         });
@@ -359,15 +383,18 @@ export class GameManager3card extends NetworkManager {
     }
 
     start() {
+
         GlobalEvent.on('custom-event', (event) => {
             if (event.action == 1) this.listCardChoosed.push(event.card)
             else this.listCardChoosed = this.listCardChoosed.filter(item => item != event.card)
             // console.log(this.listCardChoosed);
         }, this);
+
         GlobalEvent.on('reOrderCard_event', (event) => {
             this.listCardChoosed = []
             // console.log(this.listCardChoosed);
         }, this);
+
         GlobalEvent.on('ready-event', (event) => {
             this.room.send('ready', { isReady: event.ready })
         }, this);
@@ -388,6 +415,7 @@ export class GameManager3card extends NetworkManager {
             this.myPlayer = playerComponent;
         }
         this.listPlayerComponent.push(playerComponent)
+        this.checkSitBtn();
     }
 
     showLastCard() {
@@ -435,9 +463,19 @@ export class GameManager3card extends NetworkManager {
         this.room.send('endGame')
     }
     PlayYourTurn() {
+        if (!this.isPlaying()) {
+            // cảnh báo “Bạn phải ngồi xuống mới chơi được”
+            this.sc_Warning.setWarning("Bạn đang xem, hãy Sit Down để chơi");
+            return;
+        }
         this.room.send('playCard', { cards: this.listCardChoosed })
     }
     PassTurn() {
+        if (!this.isPlaying()) {
+            // cảnh báo “Bạn phải ngồi xuống mới chơi được”
+            this.sc_Warning.setWarning("Bạn đang xem, hãy Sit Down để chơi");
+            return;
+        }
         this.room.send('nextTurn')
     }
     Ready() {
@@ -457,29 +495,54 @@ export class GameManager3card extends NetworkManager {
     OrderCard() {
         this.myPlayer.refreshOrder();
     }
+
     BaoSam() {
         this.obj_PopUpBaoSam.active = true;
     }
+
     ConfirmBaoSam() {
+        if (!this.isPlaying()) {
+            // cảnh báo “Bạn phải ngồi xuống mới chơi được”
+            this.sc_Warning.setWarning("Bạn đang xem, hãy Sit Down để chơi");
+            return;
+        }
         this.room.send('baoSam')
     }
+
+    SitDown() {
+        this.room.send('sitDown');
+    }
+
+    StandUp() {
+        this.room.send('standUp');
+    }
+
     ReloadBrowser() {
         window.location.reload();
     }
 
     ShowUIState(state) {
+        console.log('ShowUi State ', state.phase)
         switch (state.phase) {
             case GamePhase.WAITING:
-                console.log(GamePhase.WAITING)
-                if (this.room.state.players[this.myIndex].isOwner == true) {
-                    this.btnStartGame.node.active = true;
-                    this.btnReady.node.active = false;
+                console.log(GamePhase.WAITING, this.isPlaying() , this.room.state.players[this.myIndex]?.isOwner == true)
+                if (this.isPlaying()) {
+                    if (this.room.state.players[this.myIndex]?.isOwner == true) {
+                        this.btnStartGame.node.active = true;
+                        this.btnReady.node.active = false;
+                    } else {
+                        this.btnStartGame.node.active = false;
+                        this.btnReady.node.active = true;
+                    }
                 } else {
                     this.btnStartGame.node.active = false;
-                    this.btnReady.node.active = true;
+                    this.btnReady.node.active = false;
                 }
+
                 this.btnOrder.node.active = false;
                 this.btnQuitRoom.node.active = true;
+                this.btnSitDown.node.active = !this.isPlaying();
+                this.btnStandUp.node.active = this.isPlaying();
                 break;
             case GamePhase.INSESSION:
                 this.isReady = false;
@@ -489,8 +552,10 @@ export class GameManager3card extends NetworkManager {
                 this.btnBaoSam.node.active = false;
                 this.obj_PopUpBaoSam.active = false;
                 this.btnQuitRoom.node.active = false;
+                this.btnSitDown.node.active = false;
+                this.btnStandUp.node.active = false;
 
-                if (state.currTurn == this.myIndex) {
+                if (state.currTurn == this.myIndex && this.isPlaying()) {
                     this.btnPlayCard.node.active = true;
 
                     const isFirstTurn = state.lastCards.length === 0;
@@ -509,6 +574,8 @@ export class GameManager3card extends NetworkManager {
                 this.btnOrder.node.active = false;
                 this.btnStartGame.node.active = false;
                 this.btnQuitRoom.node.active = false;
+                this.btnSitDown.node.active = false;
+                this.btnStandUp.node.active = false;
                 break;
             case GamePhase.WAITFORENDSESSION:
                 this.btnBaoSam.node.active = false;
@@ -518,6 +585,8 @@ export class GameManager3card extends NetworkManager {
                 this.btnReady.node.active = false;
                 this.btnOrder.node.active = false;
                 this.btnQuitRoom.node.active = false;
+                this.btnSitDown.node.active = false;
+                this.btnStandUp.node.active = false;
                 break;
             case GamePhase.WAITFORTAKERISK:
                 this.btnBaoSam.node.active = true;
@@ -527,6 +596,8 @@ export class GameManager3card extends NetworkManager {
                 this.btnReady.node.active = false;
                 this.btnOrder.node.active = true;
                 this.btnQuitRoom.node.active = false;
+                this.btnSitDown.node.active = false;
+                this.btnStandUp.node.active = false;
                 for (let j = 0; j < this.listPlayerComponent.length; j++) {
                     this.listPlayerComponent[j].setIsInRound(true)
                 }
