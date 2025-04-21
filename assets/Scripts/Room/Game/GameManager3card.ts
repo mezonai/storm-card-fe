@@ -50,6 +50,7 @@ export class GameManager3card extends NetworkManager {
     listCardChoosed = [];
     listPlayerJoinRoom = [];
     isReady = false;
+    isOwner = false;
 
     protected onEnable(): void {
         GlobalEvent.on('swapToken', (event) => {
@@ -86,9 +87,38 @@ export class GameManager3card extends NetworkManager {
             child.destroy();
         });
     }
+
+    public async createGameRoom(obj) {
+        console.log("createGameRoom!", obj);
+        try {
+            await this.createNewRoom(
+                GlobalVariable.gameRoom,
+                {
+                    roomName: obj.roomName,
+                    betAmount: obj.betAmount,
+                    userName: GlobalVariable.myMezonInfo.name,
+                    userId: GlobalVariable.myMezonInfo.id,
+                    avatar: GlobalVariable.myMezonInfo.avatar,
+                    ownerId: GlobalVariable.myMezonInfo.id
+                }, false);
+            this.registerRoomEvents();
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+        return true;
+    }
+
     public async connect(name, room) {
         try {
-            await this.joinRoom(room.roomId, { userName: name, avatar: GlobalVariable.myMezonInfo.avatar, userId: GlobalVariable.myMezonInfo.id });
+            await this.joinRoom(
+                room.roomId,
+                {
+                    userName: name,
+                    avatar: GlobalVariable.myMezonInfo.avatar,
+                    userId: GlobalVariable.myMezonInfo.id
+                }
+            );
             this.registerRoomEvents();
         } catch (e) {
             console.error(e);
@@ -136,7 +166,8 @@ export class GameManager3card extends NetworkManager {
         console.log('addNewPlayer listPlayerJoinRoom ', this.listPlayerJoinRoom)
         if (player.sessionId == this.room.sessionId) {
             this.myIndex = player.index;
-            console.log('addNewPlayer this.myIndex ', this.myIndex)
+            this.isOwner = player.isOwner;
+            console.log('addNewPlayer this.myIndex ', this.myIndex, this.isOwner)
             console.log('this.room.state.players.length ', this.room.state.players.length)
         }
 
@@ -146,13 +177,17 @@ export class GameManager3card extends NetworkManager {
                 child.destroy();
             });
         }
+
+
         this.listPlayerComponent = []
         if (this.listPlayerJoinRoom.length == this.room.state.players.length) {
             // if (this.listPlayerJoinRoom.length == GlobalVariable.clientNum.value) {
             for (let i = 0; i < this.listPlayerJoinRoom.length; i++) {
                 let validIndex = i - this.myIndex;
                 if (validIndex < 0) validIndex = validIndex + this.listPlayerJoinRoom.length
-                this.genTable(this.listPlayerJoinRoom[i], validIndex, i);
+                const canKick = this.isOwner && (this.listPlayerJoinRoom[i].sessionId !== this.room.sessionId);
+                console.log('cankick', canKick, this.isOwner, player.sessionId, this.room.sessionId)
+                this.genTable(this.listPlayerJoinRoom[i], validIndex, i, canKick);
             }
         }
 
@@ -164,6 +199,7 @@ export class GameManager3card extends NetworkManager {
                     }
                 }
         });
+
         this.room.state.listen('money', (value, previousValue) => {
             for (let j = 0; j < this.listPlayerComponent.length; j++) {
                 if (this.listPlayerComponent[j].sessionId == player.sessionId) {
@@ -171,7 +207,17 @@ export class GameManager3card extends NetworkManager {
                 }
             }
         });
-        this.room.state.listen('isReady', (value) => {
+
+        player.listen('isOwner', (currentValue, oldValue) => {
+            // Cập nhật UI (vương miện) cho player
+
+            // Nếu player này là localPlayer => cập nhật cờ isOwner
+            if (player.sessionId == this.room.sessionId) {
+                this.isOwner = currentValue; 
+                this.refreshKickButtonsForAll(); // Mình trở thành owner (hoặc mất owner)
+            }
+        });
+        player.listen('isReady', (value) => {
             if (player.sessionId == this.room.sessionId && !player.isOwner) {
                 if (value) {
                     this.txt_BtnReadyName.string = "Đã Sẵn Sàng!"
@@ -295,10 +341,33 @@ export class GameManager3card extends NetworkManager {
         this.room.onMessage("invalidMove", (value) => {
             this.sc_Warning.setWarning(value.message)
         })
+
         this.room.onMessage("validMove", (value) => {
             this.removeMyCard(value.cards)
             this.listCardChoosed = []
         })
+
+        this.room.onMessage("kickResult", (data) => {
+            // data.message = "Bạn đã kick player XXX thành công!"
+            console.log("Kick Result: ", data.message);
+            this.sc_Warning.setWarning(data.message);
+        });
+
+        this.room.onMessage("kicked", (data) => {
+            // data.message = "Bạn đã bị kick khỏi phòng bởi ..."
+            console.log("Server báo mình bị kick: ", data.message);
+
+            // Hiển thị cảnh báo
+            this.sc_Warning.setWarning(data.message);
+
+            // Sau đó có thể tự rời phòng
+            // (Phòng này server đã gọi leave() phía server, client sớm muộn cũng onLeave.
+            //  Nhưng nếu bạn muốn về ngay Lobby, có thể gọi requestLeaveRoom() hoặc code custom.)
+
+            // requestLeaveRoom() => Sau khi rời phòng, back về danh sách phòng, v.v.
+            this.requestLeaveRoom();
+        });
+
         this.room.onMessage("errorForce", (value) => {
             this.obj_Disconnect.active = true;
         })
@@ -325,6 +394,9 @@ export class GameManager3card extends NetworkManager {
                 sys.localStorage.removeItem("lastSessionId");
                 sys.localStorage.removeItem("reconnectionToken");
                 GlobalEvent.emit('backToLobby-event');
+            } else if (code === 4001) {
+                this.sc_Warning.setWarning("Bạn đã bị kick khỏi phòng!");
+                GlobalEvent.emit('backToLobby-event');
             }
             else { // Trường hợp rời chủ động
                 sys.localStorage.removeItem("lastRoomId");
@@ -348,20 +420,21 @@ export class GameManager3card extends NetworkManager {
     // ------------------------------------------
     // Thử reconnect
     // ------------------------------------------
-    private async tryReconnect() {
+    public async tryReconnect() {
         const lastRoomId = sys.localStorage.getItem("lastRoomId");
         const lastSessionId = sys.localStorage.getItem("lastSessionId");
         const reconnectionToken = sys.localStorage.getItem("reconnectionToken");
         if (!lastRoomId || !lastSessionId || !reconnectionToken) {
             console.log("Không có room cũ => thoát lobby");
-            this.obj_Disconnect.active = true;
-            GlobalEvent.emit('backToLobby-event');
-            return;
+            // this.obj_Disconnect.active = true;
+            // GlobalEvent.emit('backToLobby-event');
+            return false;
         }
 
         try {
             UIManager.Instance.showUI(UIID.ReconnectPopup);
-            console.log("Thử reconnect =>", lastRoomId, lastSessionId);
+            console.log("Thử reconnect =>", lastRoomId, lastSessionId, reconnectionToken);
+            if (!this.client) this.CreateClient();
             const oldRoom = await this.client.reconnect(reconnectionToken);
             console.log("Reconnect thành công => oldRoom:", oldRoom);
 
@@ -370,6 +443,7 @@ export class GameManager3card extends NetworkManager {
             UIManager.Instance.HideUI(UIID.ReconnectPopup);
             // Hiển thị UI => 'Đang trở lại phòng...'
             // Hoặc chờ server sync state => ...
+            return true;
         } catch (err) {
             console.log("Reconnect thất bại:", err);
 
@@ -377,8 +451,9 @@ export class GameManager3card extends NetworkManager {
             sys.localStorage.removeItem("lastRoomId");
             sys.localStorage.removeItem("lastSessionId");
             sys.localStorage.removeItem("reconnectionToken");
-            this.obj_Disconnect.active = true;
-            GlobalEvent.emit('backToLobby-event');
+            // this.obj_Disconnect.active = true;
+            // GlobalEvent.emit('backToLobby-event');
+            return false;
         }
     }
 
@@ -403,13 +478,14 @@ export class GameManager3card extends NetworkManager {
         this.ShowUIState(state);
     }
 
-    genTable(_player, _index, svIndex) {
+    genTable(_player, _index, svIndex, canKick) {
         // console.log('gentable: ', this.room.sessionId, " ", _player.sessionId)
         let player = instantiate(this.pre_Player);
         let playerComponent = player.getComponent(Player3card);
-        playerComponent.setInfo(_player.sessionId, svIndex, _player.avatar)
+        playerComponent.setInfo(_player.sessionId, svIndex, _player.avatar, _player.isOwner)
         playerComponent.setName(_player.userName)
         playerComponent.setPositionInTable(_index)
+        playerComponent.initKickButton(canKick, this.onKickPlayer.bind(this));
         player.parent = this.slots[_index];
         if (this.room.sessionId == _player.sessionId) {
             this.myPlayer = playerComponent;
@@ -525,7 +601,7 @@ export class GameManager3card extends NetworkManager {
         console.log('ShowUi State ', state.phase)
         switch (state.phase) {
             case GamePhase.WAITING:
-                console.log(GamePhase.WAITING, this.isPlaying() , this.room.state.players[this.myIndex]?.isOwner == true)
+                console.log(GamePhase.WAITING, this.isPlaying(), this.room.state.players[this.myIndex]?.isOwner == true)
                 if (this.isPlaying()) {
                     if (this.room.state.players[this.myIndex]?.isOwner == true) {
                         this.btnStartGame.node.active = true;
@@ -604,6 +680,26 @@ export class GameManager3card extends NetworkManager {
                 break;
         }
     }
+
+    // Ví dụ hàm callback Kick:
+    private onKickPlayer(sessionIdToKick: string) {
+        // Kiểm tra chắc chắn localPlayer là owner
+        if (!this.isOwner) {
+            this.sc_Warning.setWarning("Bạn không phải chủ phòng!");
+            return;
+        }
+        // Gửi lên server
+        this.room.send("kickPlayer", { sessionIdToKick });
+    }
+
+    private refreshKickButtonsForAll() {
+        for (let i = 0; i < this.listPlayerComponent.length; i++) {
+            // "player khác" => sessionId != this.room.sessionId
+            const canKick = this.isOwner && this.listPlayerComponent[i].sessionId !== this.room.sessionId;
+            this.listPlayerComponent[i].initKickButton(canKick, this.onKickPlayer.bind(this));
+        }
+    }
+
 }
 
 enum GamePhase {

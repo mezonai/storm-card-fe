@@ -125,10 +125,10 @@
         "__id__": 720
       },
       {
-        "__id__": 431
+        "__id__": 919
       },
       {
-        "__id__": 919
+        "__id__": 431
       }
     ],
     "_active": true,
@@ -377,7 +377,7 @@
     "_priority": 0,
     "_fov": 45,
     "_fovAxis": 0,
-    "_orthoHeight": 360,
+    "_orthoHeight": 511.82197496522946,
     "_near": 0,
     "_far": 1000,
     "_color": {
@@ -21101,7 +21101,7 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 63.73346242668909,
+      "width": 73.48083791497034,
       "height": 50.4
     },
     "_anchorPoint": {
@@ -21131,7 +21131,7 @@
       "b": 0,
       "a": 255
     },
-    "_string": "2.0.9",
+    "_string": "2.0.13",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
     "_actualFontSize": 29.9,
@@ -35458,8 +35458,8 @@
       }
     ],
     "attachNodes": [],
-    "isPopup": true,
-    "isShowOnFrontest": true,
+    "isPopup": false,
+    "isShowOnFrontest": false,
     "_id": "52qRd1e+1EK762gULqGQcg"
   },
   {

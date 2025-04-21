@@ -16,6 +16,8 @@ export class Player3card extends Component {
     @property(Label) txt_Money: Label;
     @property(Node) obj_IsInRound;
     @property(Sprite) spr_Avar;
+    @property({ type: Button }) btn_Kick: Button = null;
+    @property({ type: Node }) obj_Owner: Node = null;
     _layout;
 
     myIndex;
@@ -24,6 +26,7 @@ export class Player3card extends Component {
     public sessionId;
     allMyCards;
     sortOption = 1;
+    private onKickCallback: (sessionId: string) => void = null;
 
     protected start(): void {
         for (let i = 0; i < 10; i++) {
@@ -51,9 +54,10 @@ export class Player3card extends Component {
         this.allMyCards = []
     }
 
-    setInfo(id, index, url) {
+    setInfo(id, index, url, isOwner) {
         this.sessionId = id;
         this.myIndex = index;
+        this.obj_Owner.active = isOwner;
         let that = this;
         let tryLoad = false;
         console.log('avar: ', url)
@@ -104,6 +108,7 @@ export class Player3card extends Component {
     setName(name) {
         this.txt_Name.string = name;
     }
+
     setCard(cards) {
         if (cards) {
             this.allMyCards = cards;
@@ -250,5 +255,27 @@ export class Player3card extends Component {
             // Khi không có ưu tiên rõ ràng
             return getSortValue(a.number) - getSortValue(b.number);
         });
+    }
+
+    public initKickButton(canKick: boolean, callback: (sessionId: string) => void) {
+        this.onKickCallback = callback;
+
+        if (this.btn_Kick) {
+            // Hiển thị hoặc ẩn nút Kick
+            this.btn_Kick.node.active = canKick;
+
+            // Gỡ listener cũ (nếu có) và gắn listener mới
+            this.btn_Kick.node.off('click', this.onClickedKick, this);
+            this.btn_Kick.node.on('click', this.onClickedKick, this);
+        }
+    }
+
+    /**
+     * Khi nhấn nút Kick => gọi callback
+     */
+    private onClickedKick() {
+        if (this.onKickCallback) {
+            this.onKickCallback(this.sessionId);
+        }
     }
 }

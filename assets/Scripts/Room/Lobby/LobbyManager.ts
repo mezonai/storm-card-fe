@@ -93,6 +93,16 @@ export class LobbyManager extends NetworkManager {
                 this.checkRoom();
             })
             this.room.send("getBalance")
+            // let reconnected = await this.gameManager.tryReconnect();
+            // if (reconnected) {
+            //     this.obj_GameRoom.active = true;
+            //     this.obj_LobbyRoom.active = false;
+            //     // this.obj_PopupCreateRoom.active = false;
+            //     UIManager.Instance.HideUI(UIID.CreateGamePopup);
+            //     this.txt_Warning.string = '';
+            //     this.input_RoomBetAmount.string = '';
+            //     this.input_RoomName.string = '';
+            // }
         } catch (e) {
             console.error(e);
             return false;
@@ -100,7 +110,7 @@ export class LobbyManager extends NetworkManager {
         return true;
     }
     async checkRoom() {
-        let listRoom = await this.getRoom(GlobalVariable.gameInLobby)
+        let listRoom = await this.getRoom(GlobalVariable.gameRoom)
         this.genRoom(listRoom)
     }
     genRoom(listRoom) {
@@ -182,9 +192,10 @@ export class LobbyManager extends NetworkManager {
         // this.room.send("createRoom", { roomName, betAmount })
         // this.room.leave();
 
-        let isJoined = await this.gameRomManager.joinGameRoomInLobby({ roomName: roomName, userName: GlobalVariable.myMezonInfo.name, betAmount });
+        let isJoined = await this.gameManager.createGameRoom({ roomName: roomName, betAmount });
+        console.log("createGameRoom!OKKKKk", isJoined);
         if (isJoined) {
-            this.obj_GameRoomLobby.active = true;
+            this.obj_GameRoom.active = true;
             this.obj_LobbyRoom.active = false;
             // this.obj_PopupCreateRoom.active = false;
             UIManager.Instance.HideUI(UIID.CreateGamePopup);
