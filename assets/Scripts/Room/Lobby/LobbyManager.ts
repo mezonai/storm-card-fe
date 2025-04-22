@@ -81,7 +81,8 @@ export class LobbyManager extends NetworkManager {
             this.room.onLeave((code) => {
                 console.log("onLeave:", code);
                 if (1001 <= code && 1015 >= code) {
-                    this.obj_Disconnect.active = true;
+                    // this.obj_Disconnect.active = true;
+                    UIManager.Instance.showUI(UIID.PopupError);
                 }
             });
             this.room.onMessage("balance", (value) => {
@@ -105,6 +106,8 @@ export class LobbyManager extends NetworkManager {
             // }
         } catch (e) {
             console.error(e);
+            window.cocosIns.InitDone();
+            UIManager.Instance.showUI(UIID.PopupError);
             return false;
         }
         return true;

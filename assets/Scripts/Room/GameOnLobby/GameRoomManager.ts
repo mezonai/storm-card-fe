@@ -7,6 +7,8 @@ import GlobalEvent from '../../Common/GlobalEvent';
 import { warning } from '../../Common/warning';
 import { MyUserInfo } from '../../Common/MyUserInfo';
 import { LobbyManager } from '../Lobby/LobbyManager';
+import { UIManager } from '../../Common/UIManager';
+import { UIID } from '../../Common/UIID';
 const { ccclass, property } = _decorator;
 
 @ccclass('GameRoomManager')
@@ -110,7 +112,8 @@ export class GameRoomManager extends NetworkManager {
                 this.resetRoom()
                 console.log("onLeave:", code);
                 if (1001 <= code && 1015 >= code) {
-                    this.obj_Disconnect.active = true;
+                    // this.obj_Disconnect.active = true;
+                    UIManager.Instance.showUI(UIID.PopupError);
                 }
             });
         } catch (e) {
@@ -124,6 +127,7 @@ export class GameRoomManager extends NetworkManager {
     public async joinGameRoomInLobby_ByID(id, options) {
         try {
             this.btn_Out.node.on('click', this.requestLeaveRoom, this)
+            this.CreateClient();
             await this.joinRoom(id, { userName: GlobalVariable.myMezonInfo.name, avatar: GlobalVariable.myMezonInfo.avatar, roomName: 'default', userId: GlobalVariable.myMezonInfo.id });
             this.txt_RoomName.string = 'Phòng: ' + this.room.state.roomName
             window.Mezon.WebView.onEvent('SEND_TOKEN_RESPONSE_SUCCESS', (type, data) => {

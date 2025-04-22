@@ -1,4 +1,4 @@
-import { _decorator, assetManager, Button, Component, Director, director, ImageAsset, instantiate, Label, labelAssembler, Layout, Node, Prefab, Sprite, SpriteFrame, Texture2D, Toggle, tween, Vec3 } from 'cc';
+import { _decorator, assetManager, Button, Component, Director, director, easing, ImageAsset, instantiate, Label, labelAssembler, Layout, Node, Prefab, Sprite, SpriteFrame, Texture2D, Toggle, tween, Vec3 } from 'cc';
 import { Card } from './Card';
 import GlobalEvent from '../../Common/GlobalEvent';
 import commonFUnc from '../../Common/commonFunc';
@@ -36,9 +36,12 @@ export class Player3card extends Component {
             this.cardComponent.push(cardComponent)
             card_tmp.active = false;
         }
+        console.log('this.cardParent ', this.cardParent)
         this._layout = this.cardParent.getComponent(Layout);
     }
     enableLayout() {
+        console.log('enableLayout ', this._layout)
+        if (!this._layout) return;
         this._layout.updateLayout(true);
         this._layout.updateLayout();
         setTimeout(() => {
@@ -54,10 +57,9 @@ export class Player3card extends Component {
         this.allMyCards = []
     }
 
-    setInfo(id, index, url, isOwner) {
+    setInfo(id, index, url) {
         this.sessionId = id;
         this.myIndex = index;
-        this.obj_Owner.active = isOwner;
         let that = this;
         let tryLoad = false;
         console.log('avar: ', url)
@@ -101,12 +103,18 @@ export class Player3card extends Component {
             });
         }
     }
+
     updateMyIndex(index) {
         if (index < this.myIndex && this.myIndex > 0) this.myIndex--;
         // this.setName(1)
     }
+
     setName(name) {
         this.txt_Name.string = name;
+    }
+
+    setOwner(isOwner) {
+        this.obj_Owner.active = isOwner;
     }
 
     setCard(cards) {
@@ -142,7 +150,23 @@ export class Player3card extends Component {
     }
 
     setCurrentTurn(isMyTurn) {
-        this.obj_MyTurn.active = isMyTurn;
+        // this.obj_MyTurn.active = isMyTurn;
+        // stop hết tween cũ
+        tween(this.obj_MyTurn).stop();
+
+        if (isMyTurn) {
+            this.obj_MyTurn.active = true;
+            const orig = this.obj_MyTurn.getPosition();
+            tween(this.obj_MyTurn)
+                .repeatForever(
+                    tween()
+                        .to(0.5, { position: new Vec3(orig.x, orig.y + 10, orig.z) }, { easing: easing.sineInOut })
+                        .to(0.5, { position: orig }, { easing: easing.sineInOut })
+                )
+                .start();
+        } else {
+            this.obj_MyTurn.active = false;
+        }
         if (this.obj_Ready.active == true) this.obj_Ready.active = false;
     }
     setIsReady(isReady) {
@@ -154,6 +178,7 @@ export class Player3card extends Component {
         this.obj_IsInRound.active = !isIn;
     }
     showCardLeft(num) {
+        console.log('showCardLeft ', num, this.cardComponent.length)
         if (this.cardComponent.length == 0) {
             for (let i = 0; i < num; i++) {
                 let card_tmp = instantiate(this.pre_Card);
@@ -174,6 +199,7 @@ export class Player3card extends Component {
         }
     }
     showMoney(num) {
+        console.log('showmoney ', num)
         this.txt_Money.string = num;
         commonFUnc.vfx_press(this.txt_Money.node)
     }

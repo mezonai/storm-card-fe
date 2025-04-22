@@ -46,6 +46,8 @@ export class Login extends Component {
     }
     private onError(errorData) {
         console.log(errorData)
+        window.cocosIns.InitDone();
+        UIManager.Instance.showUI(UIID.PopupError);
         // UIManager.Instance.showNoticePopup("Warning", errorData.error_message);
     }
     async join() {

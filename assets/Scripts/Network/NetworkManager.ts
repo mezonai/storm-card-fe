@@ -22,11 +22,15 @@ export class NetworkManager extends Component {
     }
     public async joinRoom(id, options) {
         console.log('join to ', id)
-        this.client = new Colyseus.Client(`${GlobalVariable.useSSL ? "wss" : "ws"}://${GlobalVariable.hostname}${([443, 80].includes(GlobalVariable.port) || GlobalVariable.useSSL) ? "" : `:${GlobalVariable.port}`}`);
+        // this.client = new Colyseus.Client(`${GlobalVariable.useSSL ? "wss" : "ws"}://${GlobalVariable.hostname}${([443, 80].includes(GlobalVariable.port) || GlobalVariable.useSSL) ? "" : `:${GlobalVariable.port}`}`);
         this.room = await this.client.joinById(id, options)
     }
 
     public async getRoom(roomName: string) {
         return await this.client.getAvailableRooms(roomName);
+    }
+
+    public CreateClient() {
+        this.client = new Colyseus.Client(`${GlobalVariable.useSSL ? "wss" : "ws"}://${GlobalVariable.hostname}${([443, 80].includes(GlobalVariable.port) || GlobalVariable.useSSL) ? "" : `:${GlobalVariable.port}`}`);
     }
 }

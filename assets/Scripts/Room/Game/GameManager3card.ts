@@ -1,4 +1,4 @@
-import { _decorator, AudioClip, AudioSource, Button, Component, instantiate, Label, Node, Prefab, sys, Toggle, Tween, tween, Vec3 } from 'cc';
+import { _decorator, AudioClip, AudioSource, Button, Component, Game, game, instantiate, Label, Node, Prefab, sys, Toggle, Tween, tween, Vec3 } from 'cc';
 import { Player3card } from './Player3card';
 const { ccclass, property } = _decorator;
 
@@ -34,6 +34,10 @@ export class GameManager3card extends NetworkManager {
     @property(Button) btnStandUp: Button;
     @property(Node) obj_PopUpBaoSam: Node;
     @property(Node) obj_Disconnect: Node;
+    @property({ type: Label }) txt_RoomName: Label = null;
+    @property({ type: Label }) txt_RoomBetAmount: Label = null;
+    @property({ type: Label }) txt_TotalPlayer: Label = null;
+    @property({ type: Label }) txt_TotalSpectator: Label = null;
     @property(AudioClip) clip_Yourturn: AudioClip;
     @property(AudioClip) clip_TakeRisk: AudioClip;
 
@@ -43,7 +47,7 @@ export class GameManager3card extends NetworkManager {
 
     client!: Colyseus.Client;
     room!: Colyseus.Room;
-    myIndex: number;
+    myIndex: number = 0;
     myPlayer: Player3card;
     listPlayerComponent: Player3card[] = [];
     isMyturn: boolean;
@@ -53,6 +57,7 @@ export class GameManager3card extends NetworkManager {
     isOwner = false;
 
     protected onEnable(): void {
+
         GlobalEvent.on('swapToken', (event) => {
             try {
                 this.room.send('swapToken', event)
@@ -61,21 +66,36 @@ export class GameManager3card extends NetworkManager {
         }, this);
 
         window.onbeforeunload = () => {
+            console.log("window.onbeforeunload =>", this.room);
             if (this.room && this.room.id && this.room.sessionId) {
                 sys.localStorage.setItem("lastRoomId", this.room.id);
                 sys.localStorage.setItem("lastSessionId", this.room.sessionId);
                 sys.localStorage.setItem("reconnectionToken", this.room.reconnectionToken);
             }
         };
+
+        game.on(Game.EVENT_HIDE, () => {
+            // game chuyển sang background (tab khác, minimize window,…)
+            console.log("game.EVENT_HIDE =>", this.room);
+            this.requestLeaveRoom();
+        });
+        this.resetTextLabel();
     }
     protected onDisable(): void {
         GlobalEvent.off('swapToken')
         window.Mezon.WebView.postEvent("LEAVE_ROOM", {});
+        this.resetTextLabel();
     }
+
+    resetTextLabel() {
+        this.txt_TotalPlayer.string = '0';
+        this.txt_TotalSpectator.string = '0';
+    }
+
     async requestLeaveRoom() {
         this.room.leave();
         GlobalEvent.emit('backToLobby-event');
-        this.myIndex = 0
+        this.myIndex = 0;
         this.myPlayer = null;
         this.listPlayerComponent = [];
         this.isMyturn = false;
@@ -111,6 +131,9 @@ export class GameManager3card extends NetworkManager {
 
     public async connect(name, room) {
         try {
+            this.CreateClient();
+            // let reconnected = await this.tryReconnect();
+            // if (reconnected) return true;
             await this.joinRoom(
                 room.roomId,
                 {
@@ -157,7 +180,10 @@ export class GameManager3card extends NetworkManager {
             // console.log('listPlayerComponent turn: ', this.listPlayerComponent[j].myIndex)
             this.listPlayerComponent[j].setCurrentTurn(turnTmp)
         }
+
+        this.ShowUIState();
     }
+
     addNewPlayer(player, index) {
         GlobalVariable.clientNum.value = this.room.state.totalPlayer
         // console.log('adddd player', player.sessionId)
@@ -185,22 +211,22 @@ export class GameManager3card extends NetworkManager {
             for (let i = 0; i < this.listPlayerJoinRoom.length; i++) {
                 let validIndex = i - this.myIndex;
                 if (validIndex < 0) validIndex = validIndex + this.listPlayerJoinRoom.length
-                const canKick = this.isOwner && (this.listPlayerJoinRoom[i].sessionId !== this.room.sessionId);
-                console.log('cankick', canKick, this.isOwner, player.sessionId, this.room.sessionId)
+                const canKick = this.isOwner && (this.listPlayerJoinRoom[i].sessionId !== this.room.sessionId && this.room.state.phase === GamePhase.WAITING);
+                console.log('cankick', canKick, this.isOwner, player.sessionId, this.room.sessionId, validIndex)
                 this.genTable(this.listPlayerJoinRoom[i], validIndex, i, canKick);
             }
         }
 
-        this.room.state.listen('cardLeftNum', (value, previousValue) => {
+        player.listen('cardLeftNum', (value, previousValue) => {
             if (this.room.state.phase == GamePhase.INSESSION || this.room.state.phase == GamePhase.WAITFORENDSESSION || this.room.state.phase == GamePhase.WAITFORTAKERISK)
                 for (let j = 0; j < this.listPlayerComponent.length; j++) {
-                    if (this.listPlayerComponent[j].sessionId == player.sessionId && player.sessionId != this.myPlayer.sessionId) {
+                    if (this.listPlayerComponent[j].sessionId == player.sessionId && player.sessionId != this.myPlayer?.sessionId) {
                         this.listPlayerComponent[j].showCardLeft(player.cardLeftNum)
                     }
                 }
         });
 
-        this.room.state.listen('money', (value, previousValue) => {
+        player.listen('money', (value, previousValue) => {
             for (let j = 0; j < this.listPlayerComponent.length; j++) {
                 if (this.listPlayerComponent[j].sessionId == player.sessionId) {
                     this.listPlayerComponent[j].showMoney(player.money)
@@ -213,7 +239,8 @@ export class GameManager3card extends NetworkManager {
 
             // Nếu player này là localPlayer => cập nhật cờ isOwner
             if (player.sessionId == this.room.sessionId) {
-                this.isOwner = currentValue; 
+                console.log('isOwner ', currentValue);
+                this.isOwner = currentValue;
                 this.refreshKickButtonsForAll(); // Mình trở thành owner (hoặc mất owner)
             }
         });
@@ -241,8 +268,12 @@ export class GameManager3card extends NetworkManager {
                 }
             }
         }
-        this.checkSitBtn();
+
+        this.txt_TotalPlayer.string = this.room.state.players.length || 0;
+        this.checkMainBtn();
+        this.ShowUIState();
     }
+
     removePlayer(player, index) {
         // console.log('removePlayer ', index)
         for (let j = 0; j < this.listPlayerComponent.length; j++) {
@@ -261,17 +292,33 @@ export class GameManager3card extends NetworkManager {
         console.log('removePlayer myindex: ', this.myIndex)
         for (let j = 0; j < this.listPlayerComponent.length; j++) {
             this.listPlayerComponent[j].updateMyIndex(player.index)
+            const canKick = this.isOwner && this.listPlayerComponent[j].sessionId !== this.room.sessionId && this.room.state.phase === GamePhase.WAITING;
+            this.listPlayerComponent[j].initKickButton(canKick, this.onKickPlayer.bind(this));
         }
+
+        // If the owner left, assign new owner and update icons
+        const newOwner = this.room.state.players.find(p => p.isOwner);
+        const newOwnerId = newOwner ? newOwner.sessionId : null;
+        this.listPlayerComponent.forEach(comp => {
+            comp.obj_Owner.active = (comp.sessionId === newOwnerId);
+        });
+        // Update local owner flag
+        this.isOwner = (this.room.sessionId === newOwnerId);
+
         // if (this.listPlayerComponent.length <= 1) {
         //     this.obj_Disconnect.active = true;
         // }
-        this.checkSitBtn();
+
+        this.txt_TotalPlayer.string = this.room.state.players.length || 0;
+        this.checkMainBtn();
+        this.ShowUIState();
     }
 
     private renderSpectators() {
         // clear container
         console.log('renderSpectators this.room.state.spectators.length ', this.room.state.spectators.length)
-        this.checkSitBtn();
+        this.txt_TotalSpectator.string = this.room.state.spectators.length || 0;
+        this.checkMainBtn();
     }
 
     /** Kiểm tra xem chính client này có đang là player trong room.state.players hay không */
@@ -279,16 +326,17 @@ export class GameManager3card extends NetworkManager {
         return this.room.state.players.some(p => p.sessionId === this.room.sessionId);
     }
 
-    private checkSitBtn() {
-        this.btnSitDown.node.active = !this.isPlaying();
-        this.btnStandUp.node.active = this.isPlaying();
+    private checkMainBtn() {
+        this.btnSitDown.node.active = !this.isPlaying() && this.room.state.phase === GamePhase.WAITING;
+        this.btnStandUp.node.active = this.isPlaying() && this.room.state.phase === GamePhase.WAITING;
+        this.btnBaoSam.node.active = this.isPlaying() && this.room.state.phase === GamePhase.WAITFORTAKERISK;
+        this.btnQuitRoom.node.active = !this.isPlaying() || this.room.state.phase === GamePhase.WAITING;
     }
-
     // ------------------------------------------
     // Hàm registerRoomEvents: gom các sự kiện onMessage, onLeave
     // ------------------------------------------
     private registerRoomEvents() {
-        this.room.state.players.onAdd(this.addNewPlayer.bind(this), false)
+        this.room.state.players.onAdd(this.addNewPlayer.bind(this), true)
         this.room.state.players.onRemove(this.removePlayer.bind(this), false)
         this.room.state.spectators.onAdd(this.renderSpectators.bind(this), false)
         this.room.state.spectators.onRemove(this.renderSpectators.bind(this), false)
@@ -311,16 +359,24 @@ export class GameManager3card extends NetworkManager {
         });
         this.room.state.listen("phase", (currentValue, previousValue) => {
             if (currentValue == GamePhase.WAITING) {
-                this.room.state.listen('secondsLeft', this.updateCoutdownLabel.bind(this));
-                this.room.state.listen('timeToRisk', this.updateCoutdownLabelForTakeRisk.bind(this));
-                this.room.state.listen('currTurn', this.updateTurnLabel.bind(this));
-                this.room.state.listen('lastCards', this.showLastCard.bind(this));
+                // this.room.state.listen('secondsLeft', this.updateCoutdownLabel.bind(this));
+                // this.room.state.listen('timeToRisk', this.updateCoutdownLabelForTakeRisk.bind(this));
+                // this.room.state.listen('currTurn', this.updateTurnLabel.bind(this));
+                // this.room.state.listen('lastCards', this.showLastCard.bind(this));
             } else if (currentValue == GamePhase.ENDEDSESION) {
                 // this.txt_Turn.string = (this.room.state.winner == this.room.sessionId) ? "You win" : "You lose"
             }
+            this.room.state.listen('secondsLeft', this.updateCoutdownLabel.bind(this));
+            this.room.state.listen('timeToRisk', this.updateCoutdownLabelForTakeRisk.bind(this));
+            this.room.state.listen('currTurn', this.updateTurnLabel.bind(this));
+            this.room.state.listen('lastCards', this.showLastCard.bind(this));
+            this.refreshKickButtonsForAll();
+            this.checkMainBtn();
+            this.ShowUIState();
         });
         this.room.onMessage("newCards", (value) => {
             this.showMyCard(value.cards)
+            this.ShowUIState();
         })
         this.room.onMessage("warning", (value) => {
             this.sc_Warning.setWarning(value.message)
@@ -369,11 +425,20 @@ export class GameManager3card extends NetworkManager {
         });
 
         this.room.onMessage("errorForce", (value) => {
-            this.obj_Disconnect.active = true;
+            // this.obj_Disconnect.active = true;
+            UIManager.Instance.showUI(UIID.PopupError);
         })
 
         this.room.onMessage('youWin', (value) => { console.log('win'); this.youWin(value) });
         this.room.onMessage('youLose', (value) => { console.log('lose'); this.youLose(value) });
+
+        this.room.state.listen("roomName", (value, oldValue) => {
+            this.txt_RoomName.string = 'Phòng: ' + this.room.state.roomName
+        })
+
+        this.room.state.listen("betAmount", (value, oldValue) => {
+            this.txt_RoomBetAmount.string = 'Mức cược: ' + this.room.state.betAmount + ' GOLD';
+        })
 
         this.room.onMessage("Join", (value) => {
             console.log(">>> join " + value)
@@ -389,7 +454,8 @@ export class GameManager3card extends NetworkManager {
                 console.log("Mất kết nối => tryReconnect");
                 await this.tryReconnect();
             } else if (code === 1006) {
-                this.obj_Disconnect.active = true;
+                UIManager.Instance.showUI(UIID.PopupError);
+                // this.obj_Disconnect.active = true;
                 sys.localStorage.removeItem("lastRoomId");
                 sys.localStorage.removeItem("lastSessionId");
                 sys.localStorage.removeItem("reconnectionToken");
@@ -432,15 +498,14 @@ export class GameManager3card extends NetworkManager {
         }
 
         try {
-            UIManager.Instance.showUI(UIID.ReconnectPopup);
+            // UIManager.Instance.showUI(UIID.ReconnectPopup);
             console.log("Thử reconnect =>", lastRoomId, lastSessionId, reconnectionToken);
             if (!this.client) this.CreateClient();
             const oldRoom = await this.client.reconnect(reconnectionToken);
             console.log("Reconnect thành công => oldRoom:", oldRoom);
-
+            // UIManager.Instance.HideUI(UIID.ReconnectPopup);
             this.room = oldRoom;
             this.registerRoomEvents();
-            UIManager.Instance.HideUI(UIID.ReconnectPopup);
             // Hiển thị UI => 'Đang trở lại phòng...'
             // Hoặc chờ server sync state => ...
             return true;
@@ -475,27 +540,30 @@ export class GameManager3card extends NetworkManager {
         }, this);
     }
     handleState(state: any) {
-        this.ShowUIState(state);
+        // this.ShowUIState(state);
     }
 
     genTable(_player, _index, svIndex, canKick) {
         // console.log('gentable: ', this.room.sessionId, " ", _player.sessionId)
         let player = instantiate(this.pre_Player);
         let playerComponent = player.getComponent(Player3card);
-        playerComponent.setInfo(_player.sessionId, svIndex, _player.avatar, _player.isOwner)
-        playerComponent.setName(_player.userName)
-        playerComponent.setPositionInTable(_index)
+        playerComponent.setInfo(_player.sessionId, svIndex, _player.avatar);
+        playerComponent.setName(_player.userName);
+        playerComponent.setOwner(_player.isOwner);
+        playerComponent.showMoney(_player.money);
+        playerComponent.setPositionInTable(_index);
         playerComponent.initKickButton(canKick, this.onKickPlayer.bind(this));
+        // playerComponent.showCardLeft(_player.cardLeftNum);
         player.parent = this.slots[_index];
         if (this.room.sessionId == _player.sessionId) {
             this.myPlayer = playerComponent;
         }
         this.listPlayerComponent.push(playerComponent)
-        this.checkSitBtn();
+        this.checkMainBtn();
     }
 
     showLastCard() {
-        if (this.cardComponent.length == 10)
+        if (this.cardComponent.length == 10) {
             for (let i = 0; i < 10; i++) {
                 if (i < this.room.state.lastCards.length) {
                     this.cardComponent[i].node.active = true;
@@ -504,6 +572,8 @@ export class GameManager3card extends NetworkManager {
                 else
                     this.cardComponent[i].node.active = false;
             }
+        }
+        this.ShowUIState();
     }
     showMyCard(cards) {
         this.myPlayer.setCard(cards)
@@ -597,9 +667,9 @@ export class GameManager3card extends NetworkManager {
         window.location.reload();
     }
 
-    ShowUIState(state) {
-        console.log('ShowUi State ', state.phase)
-        switch (state.phase) {
+    ShowUIState() {
+        // console.log('ShowUi State ', state.phase)
+        switch (this.room.state.phase) {
             case GamePhase.WAITING:
                 console.log(GamePhase.WAITING, this.isPlaying(), this.room.state.players[this.myIndex]?.isOwner == true)
                 if (this.isPlaying()) {
@@ -616,64 +686,65 @@ export class GameManager3card extends NetworkManager {
                 }
 
                 this.btnOrder.node.active = false;
-                this.btnQuitRoom.node.active = true;
-                this.btnSitDown.node.active = !this.isPlaying();
-                this.btnStandUp.node.active = this.isPlaying();
+                // this.btnQuitRoom.node.active = true;
+                // this.btnSitDown.node.active = !this.isPlaying();
+                // this.btnStandUp.node.active = this.isPlaying();
                 break;
             case GamePhase.INSESSION:
                 this.isReady = false;
                 this.btnStartGame.node.active = false;
                 this.btnReady.node.active = false;
                 this.btnOrder.node.active = true;
-                this.btnBaoSam.node.active = false;
+                // this.btnBaoSam.node.active = false;
                 this.obj_PopUpBaoSam.active = false;
-                this.btnQuitRoom.node.active = false;
-                this.btnSitDown.node.active = false;
-                this.btnStandUp.node.active = false;
+                // this.btnQuitRoom.node.active = false;
+                // this.btnSitDown.node.active = false;
+                // this.btnStandUp.node.active = false;
 
-                if (state.currTurn == this.myIndex && this.isPlaying()) {
+                if (this.room.state.currTurn == this.myIndex && this.isPlaying()) {
                     this.btnPlayCard.node.active = true;
 
-                    const isFirstTurn = state.lastCards.length === 0;
+                    const isFirstTurn = this.room.state.lastCards.length === 0;
                     this.btnPassTurn.node.active = !isFirstTurn;
                 } else {
                     this.btnPlayCard.node.active = false;
                     this.btnPassTurn.node.active = false;
                 }
 
-                if (this.room.state.lastPlayer != '')
+                if (this.room.state.lastPlayer != '') {
                     for (let j = 0; j < this.listPlayerComponent.length; j++) {
                         this.listPlayerComponent[j].setIsInRound(this.room.state.playInRound.includes(this.listPlayerComponent[j].myIndex))
                     }
+                }
                 break;
             case GamePhase.ENDEDSESION:
                 this.btnOrder.node.active = false;
                 this.btnStartGame.node.active = false;
-                this.btnQuitRoom.node.active = false;
-                this.btnSitDown.node.active = false;
-                this.btnStandUp.node.active = false;
+                // this.btnQuitRoom.node.active = false;
+                // this.btnSitDown.node.active = false;
+                // this.btnStandUp.node.active = false;
                 break;
             case GamePhase.WAITFORENDSESSION:
-                this.btnBaoSam.node.active = false;
+                // this.btnBaoSam.node.active = false;
                 this.btnPlayCard.node.active = false;
                 this.btnPassTurn.node.active = false;
                 this.btnStartGame.node.active = false;
                 this.btnReady.node.active = false;
                 this.btnOrder.node.active = false;
-                this.btnQuitRoom.node.active = false;
-                this.btnSitDown.node.active = false;
-                this.btnStandUp.node.active = false;
+                // this.btnQuitRoom.node.active = false;
+                // this.btnSitDown.node.active = false;
+                // this.btnStandUp.node.active = false;
                 break;
             case GamePhase.WAITFORTAKERISK:
-                this.btnBaoSam.node.active = true;
+                // this.btnBaoSam.node.active = true;
                 this.btnPlayCard.node.active = false;
                 this.btnPassTurn.node.active = false;
                 this.btnStartGame.node.active = false;
                 this.btnReady.node.active = false;
                 this.btnOrder.node.active = true;
-                this.btnQuitRoom.node.active = false;
-                this.btnSitDown.node.active = false;
-                this.btnStandUp.node.active = false;
+                // this.btnQuitRoom.node.active = false;
+                // this.btnSitDown.node.active = false;
+                // this.btnStandUp.node.active = false;
                 for (let j = 0; j < this.listPlayerComponent.length; j++) {
                     this.listPlayerComponent[j].setIsInRound(true)
                 }
@@ -695,7 +766,7 @@ export class GameManager3card extends NetworkManager {
     private refreshKickButtonsForAll() {
         for (let i = 0; i < this.listPlayerComponent.length; i++) {
             // "player khác" => sessionId != this.room.sessionId
-            const canKick = this.isOwner && this.listPlayerComponent[i].sessionId !== this.room.sessionId;
+            const canKick = this.isOwner && this.listPlayerComponent[i].sessionId !== this.room.sessionId && this.room.state.phase === GamePhase.WAITING;
             this.listPlayerComponent[i].initKickButton(canKick, this.onKickPlayer.bind(this));
         }
     }
