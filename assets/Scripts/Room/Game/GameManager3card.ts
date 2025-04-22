@@ -81,32 +81,32 @@ export class GameManager3card extends NetworkManager {
         });
         this.resetTextLabel();
     }
+
     protected onDisable(): void {
         GlobalEvent.off('swapToken')
         window.Mezon.WebView.postEvent("LEAVE_ROOM", {});
         this.resetTextLabel();
     }
 
-    resetTextLabel() {
-        this.txt_TotalPlayer.string = '0';
-        this.txt_TotalSpectator.string = '0';
+    start() {
+
+        GlobalEvent.on('custom-event', (event) => {
+            if (event.action == 1) this.listCardChoosed.push(event.card)
+            else this.listCardChoosed = this.listCardChoosed.filter(item => item != event.card)
+            // console.log(this.listCardChoosed);
+        }, this);
+
+        GlobalEvent.on('reOrderCard_event', (event) => {
+            this.listCardChoosed = []
+            // console.log(this.listCardChoosed);
+        }, this);
+
+        GlobalEvent.on('ready-event', (event) => {
+            this.room.send('ready', { isReady: event.ready })
+        }, this);
     }
 
-    async requestLeaveRoom() {
-        this.room.leave();
-        GlobalEvent.emit('backToLobby-event');
-        this.myIndex = 0;
-        this.myPlayer = null;
-        this.listPlayerComponent = [];
-        this.isMyturn = false;
-        this.listCardChoosed = [];
-        this.listPlayerJoinRoom = [];
-        this.isReady = false;
-        this.cardComponent = [];
-        this.cardParent.children.forEach((child) => {
-            child.destroy();
-        });
-    }
+
 
     public async createGameRoom(obj) {
         console.log("createGameRoom!", obj);
@@ -158,180 +158,8 @@ export class GameManager3card extends NetworkManager {
         return true;
     }
 
-    updateCoutdownLabel() {
-        this.txt_Time.string = Math.max(0, Math.ceil(this.room.state.secondsLeft)) + '';
-    }
-    updateCoutdownLabelForTakeRisk() {
-        this.txt_Time.string = Math.max(0, Math.ceil(this.room.state.timeToRisk)) + '';
-    }
-    updateTurnLabel() {
-        this.isMyturn = this.room.state.currTurn == this.myIndex;
-        // console.log('cuurent turn: ', this.room.state.currTurn)
-
-        for (let j = 0; j < this.listPlayerComponent.length; j++) {
-            let turnTmp = false;
-            if (this.room.state.currTurn == this.listPlayerComponent[j].myIndex) {
-                turnTmp = true
-                if (this.listPlayerComponent[j].sessionId == this.room.sessionId && this.room.state.phase !== GamePhase.WAITING) {
-                    SoundManager.instance.playSfx(this.clip_Yourturn)
-                    console.log('play sounddđ')
-                }
-            }
-            // console.log('listPlayerComponent turn: ', this.listPlayerComponent[j].myIndex)
-            this.listPlayerComponent[j].setCurrentTurn(turnTmp)
-        }
-
-        this.ShowUIState();
-    }
-
-    addNewPlayer(player, index) {
-        GlobalVariable.clientNum.value = this.room.state.totalPlayer
-        // console.log('adddd player', player.sessionId)
-        // console.log('listPlayerJoinRoom ', this.listPlayerJoinRoom.length, " ", GlobalVariable.clientNum.value)
-        this.listPlayerJoinRoom.push(player)
-        console.log('addNewPlayer listPlayerJoinRoom ', this.listPlayerJoinRoom)
-        if (player.sessionId == this.room.sessionId) {
-            this.myIndex = player.index;
-            this.isOwner = player.isOwner;
-            console.log('addNewPlayer this.myIndex ', this.myIndex, this.isOwner)
-            console.log('this.room.state.players.length ', this.room.state.players.length)
-        }
-
-        //remove all child this.slots and this.listPlayerComponent
-        for (let i = 0; i < this.slots.length; i++) {
-            this.slots[i].children.forEach((child) => {
-                child.destroy();
-            });
-        }
-
-
-        this.listPlayerComponent = []
-        if (this.listPlayerJoinRoom.length == this.room.state.players.length) {
-            // if (this.listPlayerJoinRoom.length == GlobalVariable.clientNum.value) {
-            for (let i = 0; i < this.listPlayerJoinRoom.length; i++) {
-                let validIndex = i - this.myIndex;
-                if (validIndex < 0) validIndex = validIndex + this.listPlayerJoinRoom.length
-                const canKick = this.isOwner && (this.listPlayerJoinRoom[i].sessionId !== this.room.sessionId && this.room.state.phase === GamePhase.WAITING);
-                console.log('cankick', canKick, this.isOwner, player.sessionId, this.room.sessionId, validIndex)
-                this.genTable(this.listPlayerJoinRoom[i], validIndex, i, canKick);
-            }
-        }
-
-        player.listen('cardLeftNum', (value, previousValue) => {
-            if (this.room.state.phase == GamePhase.INSESSION || this.room.state.phase == GamePhase.WAITFORENDSESSION || this.room.state.phase == GamePhase.WAITFORTAKERISK)
-                for (let j = 0; j < this.listPlayerComponent.length; j++) {
-                    if (this.listPlayerComponent[j].sessionId == player.sessionId && player.sessionId != this.myPlayer?.sessionId) {
-                        this.listPlayerComponent[j].showCardLeft(player.cardLeftNum)
-                    }
-                }
-        });
-
-        player.listen('money', (value, previousValue) => {
-            for (let j = 0; j < this.listPlayerComponent.length; j++) {
-                if (this.listPlayerComponent[j].sessionId == player.sessionId) {
-                    this.listPlayerComponent[j].showMoney(player.money)
-                }
-            }
-        });
-
-        player.listen('isOwner', (currentValue, oldValue) => {
-            // Cập nhật UI (vương miện) cho player
-
-            // Nếu player này là localPlayer => cập nhật cờ isOwner
-            if (player.sessionId == this.room.sessionId) {
-                console.log('isOwner ', currentValue);
-                this.isOwner = currentValue;
-                this.refreshKickButtonsForAll(); // Mình trở thành owner (hoặc mất owner)
-            }
-        });
-        player.listen('isReady', (value) => {
-            if (player.sessionId == this.room.sessionId && !player.isOwner) {
-                if (value) {
-                    this.txt_BtnReadyName.string = "Đã Sẵn Sàng!"
-                } else {
-                    this.txt_BtnReadyName.string = "Sẵn Sàng"
-                }
-            }
-            for (let j = 0; j < this.listPlayerComponent.length; j++) {
-                if (this.listPlayerComponent[j].sessionId == player.sessionId) {
-                    this.listPlayerComponent[j]?.setIsReady(player.isReady);
-                }
-            }
-        })
-
-        //show money when new player joined
-        for (let i = 0; i < this.room.state.players.length; i++) {
-            for (let j = 0; j < this.listPlayerComponent.length; j++) {
-                if (this.listPlayerComponent[j].sessionId == this.room.state.players[i].sessionId) {
-                    console.log(player.money, this.listPlayerComponent[j].sessionId)
-                    this.listPlayerComponent[j].showMoney(this.room.state.players[i].money)
-                }
-            }
-        }
-
-        this.txt_TotalPlayer.string = this.room.state.players.length || 0;
-        this.checkMainBtn();
-        this.ShowUIState();
-    }
-
-    removePlayer(player, index) {
-        // console.log('removePlayer ', index)
-        for (let j = 0; j < this.listPlayerComponent.length; j++) {
-            if (this.listPlayerComponent[j].sessionId == player.sessionId) {
-                let tmp = this.listPlayerComponent[j]
-                this.listPlayerComponent = this.listPlayerComponent.filter(tmp => tmp.sessionId != player.sessionId)
-                tmp.node.destroy()
-            }
-        }
-        for (let j = 0; j < this.listPlayerJoinRoom.length; j++) {
-            if (this.listPlayerJoinRoom[j].sessionId == player.sessionId) {
-                this.listPlayerJoinRoom = this.listPlayerJoinRoom.filter(tmp => tmp.sessionId != player.sessionId)
-            }
-        }
-        if (player.index < this.myIndex && this.myIndex > 0) this.myIndex--
-        console.log('removePlayer myindex: ', this.myIndex)
-        for (let j = 0; j < this.listPlayerComponent.length; j++) {
-            this.listPlayerComponent[j].updateMyIndex(player.index)
-            const canKick = this.isOwner && this.listPlayerComponent[j].sessionId !== this.room.sessionId && this.room.state.phase === GamePhase.WAITING;
-            this.listPlayerComponent[j].initKickButton(canKick, this.onKickPlayer.bind(this));
-        }
-
-        // If the owner left, assign new owner and update icons
-        const newOwner = this.room.state.players.find(p => p.isOwner);
-        const newOwnerId = newOwner ? newOwner.sessionId : null;
-        this.listPlayerComponent.forEach(comp => {
-            comp.obj_Owner.active = (comp.sessionId === newOwnerId);
-        });
-        // Update local owner flag
-        this.isOwner = (this.room.sessionId === newOwnerId);
-
-        // if (this.listPlayerComponent.length <= 1) {
-        //     this.obj_Disconnect.active = true;
-        // }
-
-        this.txt_TotalPlayer.string = this.room.state.players.length || 0;
-        this.checkMainBtn();
-        this.ShowUIState();
-    }
-
-    private renderSpectators() {
-        // clear container
-        console.log('renderSpectators this.room.state.spectators.length ', this.room.state.spectators.length)
-        this.txt_TotalSpectator.string = this.room.state.spectators.length || 0;
-        this.checkMainBtn();
-    }
-
     /** Kiểm tra xem chính client này có đang là player trong room.state.players hay không */
-    private isPlaying(): boolean {
-        return this.room.state.players.some(p => p.sessionId === this.room.sessionId);
-    }
 
-    private checkMainBtn() {
-        this.btnSitDown.node.active = !this.isPlaying() && this.room.state.phase === GamePhase.WAITING;
-        this.btnStandUp.node.active = this.isPlaying() && this.room.state.phase === GamePhase.WAITING;
-        this.btnBaoSam.node.active = this.isPlaying() && this.room.state.phase === GamePhase.WAITFORTAKERISK;
-        this.btnQuitRoom.node.active = !this.isPlaying() || this.room.state.phase === GamePhase.WAITING;
-    }
     // ------------------------------------------
     // Hàm registerRoomEvents: gom các sự kiện onMessage, onLeave
     // ------------------------------------------
@@ -374,6 +202,15 @@ export class GameManager3card extends NetworkManager {
             this.checkMainBtn();
             this.ShowUIState();
         });
+
+        this.room.state.listen("roomName", (value, oldValue) => {
+            this.txt_RoomName.string = 'Phòng: ' + this.room.state.roomName
+        })
+
+        this.room.state.listen("betAmount", (value, oldValue) => {
+            this.txt_RoomBetAmount.string = 'Mức cược: ' + this.room.state.betAmount + ' GOLD';
+        })
+
         this.room.onMessage("newCards", (value) => {
             this.showMyCard(value.cards)
             this.ShowUIState();
@@ -401,6 +238,7 @@ export class GameManager3card extends NetworkManager {
         this.room.onMessage("validMove", (value) => {
             this.removeMyCard(value.cards)
             this.listCardChoosed = []
+            this.txt_NoticeState.string = '';
         })
 
         this.room.onMessage("kickResult", (data) => {
@@ -431,14 +269,6 @@ export class GameManager3card extends NetworkManager {
 
         this.room.onMessage('youWin', (value) => { console.log('win'); this.youWin(value) });
         this.room.onMessage('youLose', (value) => { console.log('lose'); this.youLose(value) });
-
-        this.room.state.listen("roomName", (value, oldValue) => {
-            this.txt_RoomName.string = 'Phòng: ' + this.room.state.roomName
-        })
-
-        this.room.state.listen("betAmount", (value, oldValue) => {
-            this.txt_RoomBetAmount.string = 'Mức cược: ' + this.room.state.betAmount + ' GOLD';
-        })
 
         this.room.onMessage("Join", (value) => {
             console.log(">>> join " + value)
@@ -522,45 +352,179 @@ export class GameManager3card extends NetworkManager {
         }
     }
 
-    start() {
-
-        GlobalEvent.on('custom-event', (event) => {
-            if (event.action == 1) this.listCardChoosed.push(event.card)
-            else this.listCardChoosed = this.listCardChoosed.filter(item => item != event.card)
-            // console.log(this.listCardChoosed);
-        }, this);
-
-        GlobalEvent.on('reOrderCard_event', (event) => {
-            this.listCardChoosed = []
-            // console.log(this.listCardChoosed);
-        }, this);
-
-        GlobalEvent.on('ready-event', (event) => {
-            this.room.send('ready', { isReady: event.ready })
-        }, this);
-    }
     handleState(state: any) {
         // this.ShowUIState(state);
     }
 
-    genTable(_player, _index, svIndex, canKick) {
-        // console.log('gentable: ', this.room.sessionId, " ", _player.sessionId)
-        let player = instantiate(this.pre_Player);
-        let playerComponent = player.getComponent(Player3card);
-        playerComponent.setInfo(_player.sessionId, svIndex, _player.avatar);
-        playerComponent.setName(_player.userName);
-        playerComponent.setOwner(_player.isOwner);
-        playerComponent.showMoney(_player.money);
-        playerComponent.setPositionInTable(_index);
-        playerComponent.initKickButton(canKick, this.onKickPlayer.bind(this));
-        // playerComponent.showCardLeft(_player.cardLeftNum);
-        player.parent = this.slots[_index];
-        if (this.room.sessionId == _player.sessionId) {
-            this.myPlayer = playerComponent;
+    updateCoutdownLabel() {
+        this.txt_Time.string = Math.max(0, Math.ceil(this.room.state.secondsLeft)) + '';
+    }
+
+    updateCoutdownLabelForTakeRisk() {
+        this.txt_Time.string = Math.max(0, Math.ceil(this.room.state.timeToRisk)) + '';
+    }
+
+    updateTurnLabel() {
+
+        if (this.room.state.phase !== GamePhase.INSESSION) return;
+        this.isMyturn = this.room.state.currTurn == this.myIndex;
+        // console.log('cuurent turn: ', this.room.state.currTurn)
+
+        for (let j = 0; j < this.listPlayerComponent.length; j++) {
+            let turnTmp = false;
+            if (this.room.state.currTurn == this.listPlayerComponent[j].myIndex) {
+                turnTmp = true
+                if (this.listPlayerComponent[j].sessionId == this.room.sessionId && this.room.state.phase !== GamePhase.WAITING) {
+                    SoundManager.instance.playSfx(this.clip_Yourturn)
+                    console.log('play sounddđ')
+                }
+            }
+            // console.log('listPlayerComponent turn: ', this.listPlayerComponent[j].myIndex)
+            this.listPlayerComponent[j].setCurrentTurn(turnTmp)
         }
-        this.listPlayerComponent.push(playerComponent)
+
+        this.ShowUIState();
+    }
+
+    addNewPlayer(player, index) {
+        GlobalVariable.clientNum.value = this.room.state.totalPlayer
+        // console.log('adddd player', player.sessionId)
+        // console.log('listPlayerJoinRoom ', this.listPlayerJoinRoom.length, " ", GlobalVariable.clientNum.value)
+        this.listPlayerJoinRoom.push(player)
+        console.log('addNewPlayer listPlayerJoinRoom ', this.listPlayerJoinRoom)
+        if (player.sessionId == this.room.sessionId) {
+            this.myIndex = player.index;
+            this.isOwner = player.isOwner;
+            console.log('addNewPlayer this.myIndex ', this.myIndex, this.isOwner)
+            console.log('this.room.state.players.length ', this.room.state.players.length)
+        }
+
+        //remove all child this.slots and this.listPlayerComponent
+        for (let i = 0; i < this.slots.length; i++) {
+            this.slots[i].children.forEach((child) => {
+                child.destroy();
+            });
+        }
+
+
+        this.listPlayerComponent = []
+        if (this.listPlayerJoinRoom.length == this.room.state.players.length) {
+            // if (this.listPlayerJoinRoom.length == GlobalVariable.clientNum.value) {
+            for (let i = 0; i < this.listPlayerJoinRoom.length; i++) {
+                let validIndex = i - this.myIndex;
+                if (validIndex < 0) validIndex = validIndex + this.listPlayerJoinRoom.length
+                const canKick = this.isOwner && (this.listPlayerJoinRoom[i].sessionId !== this.room.sessionId && this.room.state.phase === GamePhase.WAITING);
+                console.log('cankick', canKick, this.isOwner, player.sessionId, this.room.sessionId, validIndex)
+                this.genTable(this.listPlayerJoinRoom[i], validIndex, i, canKick);
+            }
+        }
+
+        player.listen('cardLeftNum', (value, previousValue) => {
+            if (this.room.state.phase == GamePhase.INSESSION || this.room.state.phase == GamePhase.WAITFORENDSESSION || this.room.state.phase == GamePhase.WAITFORTAKERISK) {
+                for (let j = 0; j < this.listPlayerComponent.length; j++) {
+                    if (this.listPlayerComponent[j].sessionId == player.sessionId && player.sessionId != this.myPlayer?.sessionId) {
+                        this.listPlayerComponent[j].showCardLeft(player.cardLeftNum)
+                    }
+                }
+            }
+        });
+
+        player.listen('money', (value, previousValue) => {
+            for (let j = 0; j < this.listPlayerComponent.length; j++) {
+                if (this.listPlayerComponent[j].sessionId == player.sessionId) {
+                    this.listPlayerComponent[j].showMoney(player.money)
+                }
+            }
+        });
+
+        player.listen('isOwner', (currentValue, oldValue) => {
+            // Cập nhật UI (vương miện) cho player
+
+            // Nếu player này là localPlayer => cập nhật cờ isOwner
+            if (player.sessionId == this.room.sessionId) {
+                console.log('isOwner ', currentValue);
+                this.isOwner = currentValue;
+                this.refreshKickButtonsForAll(); // Mình trở thành owner (hoặc mất owner)
+            }
+        });
+
+        player.listen('isReady', (value) => {
+            if (player.sessionId == this.room.sessionId && !player.isOwner) {
+                if (value) {
+                    this.txt_BtnReadyName.string = "Đã Sẵn Sàng!"
+                } else {
+                    this.txt_BtnReadyName.string = "Sẵn Sàng"
+                }
+            }
+            for (let j = 0; j < this.listPlayerComponent.length; j++) {
+                if (this.listPlayerComponent[j].sessionId == player.sessionId) {
+                    this.listPlayerComponent[j]?.setIsReady(player.isReady);
+                }
+            }
+        })
+
+        //show money when new player joined
+        for (let i = 0; i < this.room.state.players.length; i++) {
+            for (let j = 0; j < this.listPlayerComponent.length; j++) {
+                if (this.listPlayerComponent[j].sessionId == this.room.state.players[i].sessionId) {
+                    console.log(player.money, this.listPlayerComponent[j].sessionId)
+                    this.listPlayerComponent[j].showMoney(this.room.state.players[i].money)
+                }
+            }
+        }
+
+        this.txt_TotalPlayer.string = this.room.state.players.length || 0;
+        this.checkMainBtn();
+        this.ShowUIState();
+    }
+
+    removePlayer(player, index) {
+        // console.log('removePlayer ', index)
+        for (let j = 0; j < this.listPlayerComponent.length; j++) {
+            if (this.listPlayerComponent[j].sessionId == player.sessionId) {
+                let tmp = this.listPlayerComponent[j]
+                this.listPlayerComponent = this.listPlayerComponent.filter(tmp => tmp.sessionId != player.sessionId)
+                tmp.node.destroy()
+            }
+        }
+        for (let j = 0; j < this.listPlayerJoinRoom.length; j++) {
+            if (this.listPlayerJoinRoom[j].sessionId == player.sessionId) {
+                this.listPlayerJoinRoom = this.listPlayerJoinRoom.filter(tmp => tmp.sessionId != player.sessionId)
+            }
+        }
+        if (player.index < this.myIndex && this.myIndex > 0) this.myIndex--
+        console.log('removePlayer myindex: ', this.myIndex)
+        for (let j = 0; j < this.listPlayerComponent.length; j++) {
+            this.listPlayerComponent[j].updateMyIndex(player.index)
+            const canKick = this.isOwner && this.listPlayerComponent[j].sessionId !== this.room.sessionId && this.room.state.phase === GamePhase.WAITING;
+            this.listPlayerComponent[j].initKickButton(canKick, this.onKickPlayer.bind(this));
+        }
+
+        // If the owner left, assign new owner and update icons
+        const newOwner = this.room.state.players.find(p => p.isOwner);
+        const newOwnerId = newOwner ? newOwner.sessionId : null;
+        this.listPlayerComponent.forEach(comp => {
+            comp.obj_Owner.active = (comp.sessionId === newOwnerId);
+        });
+        // Update local owner flag
+        this.isOwner = (this.room.sessionId === newOwnerId);
+
+        // if (this.listPlayerComponent.length <= 1) {
+        //     this.obj_Disconnect.active = true;
+        // }
+
+        this.txt_TotalPlayer.string = this.room.state.players.length || 0;
+        this.checkMainBtn();
+        this.ShowUIState();
+    }
+
+    private renderSpectators() {
+        // clear container
+        console.log('renderSpectators this.room.state.spectators.length ', this.room.state.spectators.length)
+        this.txt_TotalSpectator.string = this.room.state.spectators.length || 0;
         this.checkMainBtn();
     }
+
 
     showLastCard() {
         if (this.cardComponent.length == 10) {
@@ -575,9 +539,11 @@ export class GameManager3card extends NetworkManager {
         }
         this.ShowUIState();
     }
+
     showMyCard(cards) {
         this.myPlayer.setCard(cards)
     }
+
     removeMyCard(cards) {
         this.myPlayer.removeCard(cards)
     }
@@ -585,6 +551,7 @@ export class GameManager3card extends NetworkManager {
     youWin(value) {
         this.sc_Warning.setWarning("You WIN " + value)
     }
+
     youLose(value) {
         this.sc_Warning.setWarning("You Lose " + value + " !!!")
     }
@@ -602,28 +569,33 @@ export class GameManager3card extends NetworkManager {
             this.room.send('startGame');
         }
     }
+
     NewGame() {
         this.room.send('newGame');
     }
+
     EndGame() {
         this.room.send('endGame')
     }
+
     PlayYourTurn() {
-        if (!this.isPlaying()) {
+        if (!this.isPlayer()) {
             // cảnh báo “Bạn phải ngồi xuống mới chơi được”
             this.sc_Warning.setWarning("Bạn đang xem, hãy Sit Down để chơi");
             return;
         }
         this.room.send('playCard', { cards: this.listCardChoosed })
     }
+
     PassTurn() {
-        if (!this.isPlaying()) {
+        if (!this.isPlayer()) {
             // cảnh báo “Bạn phải ngồi xuống mới chơi được”
             this.sc_Warning.setWarning("Bạn đang xem, hãy Sit Down để chơi");
             return;
         }
         this.room.send('nextTurn')
     }
+
     Ready() {
         this.isReady = !this.isReady;
         this.txt_NoticeState.string = ''
@@ -647,7 +619,7 @@ export class GameManager3card extends NetworkManager {
     }
 
     ConfirmBaoSam() {
-        if (!this.isPlaying()) {
+        if (!this.isPlayer()) {
             // cảnh báo “Bạn phải ngồi xuống mới chơi được”
             this.sc_Warning.setWarning("Bạn đang xem, hãy Sit Down để chơi");
             return;
@@ -667,12 +639,31 @@ export class GameManager3card extends NetworkManager {
         window.location.reload();
     }
 
+    genTable(_player, _index, svIndex, canKick) {
+        // console.log('gentable: ', this.room.sessionId, " ", _player.sessionId)
+        let player = instantiate(this.pre_Player);
+        let playerComponent = player.getComponent(Player3card);
+        playerComponent.setInfo(_player.sessionId, svIndex, _player.avatar);
+        playerComponent.setName(_player.userName);
+        playerComponent.setOwner(_player.isOwner);
+        playerComponent.showMoney(_player.money);
+        playerComponent.setPositionInTable(_index);
+        playerComponent.initKickButton(canKick, this.onKickPlayer.bind(this));
+        // playerComponent.showCardLeft(_player.cardLeftNum);
+        player.parent = this.slots[_index];
+        if (this.room.sessionId == _player.sessionId) {
+            this.myPlayer = playerComponent;
+        }
+        this.listPlayerComponent.push(playerComponent)
+        this.checkMainBtn();
+    }
+
     ShowUIState() {
         // console.log('ShowUi State ', state.phase)
         switch (this.room.state.phase) {
             case GamePhase.WAITING:
-                console.log(GamePhase.WAITING, this.isPlaying(), this.room.state.players[this.myIndex]?.isOwner == true)
-                if (this.isPlaying()) {
+                console.log(GamePhase.WAITING, this.isPlayer(), this.room.state.players[this.myIndex]?.isOwner == true)
+                if (this.isPlayer()) {
                     if (this.room.state.players[this.myIndex]?.isOwner == true) {
                         this.btnStartGame.node.active = true;
                         this.btnReady.node.active = false;
@@ -685,7 +676,7 @@ export class GameManager3card extends NetworkManager {
                     this.btnReady.node.active = false;
                 }
 
-                this.btnOrder.node.active = false;
+                // this.btnOrder.node.active = false;
                 // this.btnQuitRoom.node.active = true;
                 // this.btnSitDown.node.active = !this.isPlaying();
                 // this.btnStandUp.node.active = this.isPlaying();
@@ -694,14 +685,14 @@ export class GameManager3card extends NetworkManager {
                 this.isReady = false;
                 this.btnStartGame.node.active = false;
                 this.btnReady.node.active = false;
-                this.btnOrder.node.active = true;
+                // this.btnOrder.node.active = true;
                 // this.btnBaoSam.node.active = false;
                 this.obj_PopUpBaoSam.active = false;
                 // this.btnQuitRoom.node.active = false;
                 // this.btnSitDown.node.active = false;
                 // this.btnStandUp.node.active = false;
 
-                if (this.room.state.currTurn == this.myIndex && this.isPlaying()) {
+                if (this.room.state.currTurn == this.myIndex && this.isPlayer()) {
                     this.btnPlayCard.node.active = true;
 
                     const isFirstTurn = this.room.state.lastCards.length === 0;
@@ -718,7 +709,7 @@ export class GameManager3card extends NetworkManager {
                 }
                 break;
             case GamePhase.ENDEDSESION:
-                this.btnOrder.node.active = false;
+                // this.btnOrder.node.active = false;
                 this.btnStartGame.node.active = false;
                 // this.btnQuitRoom.node.active = false;
                 // this.btnSitDown.node.active = false;
@@ -730,7 +721,7 @@ export class GameManager3card extends NetworkManager {
                 this.btnPassTurn.node.active = false;
                 this.btnStartGame.node.active = false;
                 this.btnReady.node.active = false;
-                this.btnOrder.node.active = false;
+                // this.btnOrder.node.active = false;
                 // this.btnQuitRoom.node.active = false;
                 // this.btnSitDown.node.active = false;
                 // this.btnStandUp.node.active = false;
@@ -741,7 +732,7 @@ export class GameManager3card extends NetworkManager {
                 this.btnPassTurn.node.active = false;
                 this.btnStartGame.node.active = false;
                 this.btnReady.node.active = false;
-                this.btnOrder.node.active = true;
+                // this.btnOrder.node.active = true;
                 // this.btnQuitRoom.node.active = false;
                 // this.btnSitDown.node.active = false;
                 // this.btnStandUp.node.active = false;
@@ -750,6 +741,40 @@ export class GameManager3card extends NetworkManager {
                 }
                 break;
         }
+    }
+
+    private resetTextLabel() {
+        this.txt_TotalPlayer.string = '0';
+        this.txt_TotalSpectator.string = '0';
+    }
+
+    async requestLeaveRoom() {
+        this.room.leave();
+        GlobalEvent.emit('backToLobby-event');
+        this.myIndex = 0;
+        this.myPlayer = null;
+        this.listPlayerComponent = [];
+        this.isMyturn = false;
+        this.listCardChoosed = [];
+        this.listPlayerJoinRoom = [];
+        this.isReady = false;
+        this.cardComponent = [];
+        this.cardParent.children.forEach((child) => {
+            child.destroy();
+        });
+    }
+
+    private isPlayer(): boolean {
+        return this.room.state.players.some(p => p.sessionId === this.room.sessionId);
+    }
+
+    private checkMainBtn() {
+        this.btnSitDown.node.active = !this.isPlayer() && this.room.state.phase === GamePhase.WAITING;
+        this.btnStandUp.node.active = this.isPlayer() && this.room.state.phase === GamePhase.WAITING;
+        this.btnBaoSam.node.active = this.isPlayer() && this.room.state.phase === GamePhase.WAITFORTAKERISK;
+        this.btnOrder.node.active = this.isPlayer() && (this.room.state.phase === GamePhase.INSESSION || this.room.state.phase === GamePhase.WAITFORTAKERISK);
+        this.btnQuitRoom.node.active = !this.isPlayer() || this.room.state.phase === GamePhase.WAITING;
+        
     }
 
     // Ví dụ hàm callback Kick:
