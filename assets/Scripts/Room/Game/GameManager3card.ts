@@ -1,4 +1,4 @@
-import { _decorator, AudioClip, AudioSource, Button, Component, Game, game, instantiate, Label, Node, Prefab, sys, Toggle, Tween, tween, Vec3 } from 'cc';
+import { _decorator, AudioClip, AudioSource, Button, Component, easing, Game, game, instantiate, Label, Node, Prefab, sys, Toggle, Tween, tween, Vec3 } from 'cc';
 import { Player3card } from './Player3card';
 const { ccclass, property } = _decorator;
 
@@ -42,7 +42,7 @@ export class GameManager3card extends NetworkManager {
     @property(AudioClip) clip_TakeRisk: AudioClip;
 
     cardComponent: Card[] = [];
-    @property(Node) cardParent;
+    @property(Node) cardParent: Node;
     @property(Prefab) pre_Card;
 
     client!: Colyseus.Client;
@@ -529,14 +529,27 @@ export class GameManager3card extends NetworkManager {
     showLastCard() {
         if (this.cardComponent.length == 10) {
             for (let i = 0; i < 10; i++) {
+                const comp = this.cardComponent[i];
                 if (i < this.room.state.lastCards.length) {
-                    this.cardComponent[i].node.active = true;
-                    this.cardComponent[i].setCard(this.room.state.lastCards[i])
+                    comp.node.active = true;
+                    comp.setCard(this.room.state.lastCards[i])
                 }
                 else
-                    this.cardComponent[i].node.active = false;
+                    comp.node.active = false;
             }
         }
+        // reset về scale gốc
+        tween(this.cardParent).stop();
+        this.cardParent.setScale(1, 1, 1);
+
+        // phóng to rồi về lại
+        this.scheduleOnce(() => {
+            tween(this.cardParent)
+                .to(0.3, { scale: new Vec3(1.3, 1.3, 1.3) }, { easing: easing.quadOut })
+                .to(0.3, { scale: new Vec3(1, 1, 1) }, { easing: easing.backOut })
+                .start();
+        }, 0);
+        
         this.ShowUIState();
     }
 
@@ -675,7 +688,7 @@ export class GameManager3card extends NetworkManager {
                     this.btnStartGame.node.active = false;
                     this.btnReady.node.active = false;
                 }
-
+                this.txt_NoticeState.string = '';
                 // this.btnOrder.node.active = false;
                 // this.btnQuitRoom.node.active = true;
                 // this.btnSitDown.node.active = !this.isPlaying();
@@ -774,7 +787,7 @@ export class GameManager3card extends NetworkManager {
         this.btnBaoSam.node.active = this.isPlayer() && this.room.state.phase === GamePhase.WAITFORTAKERISK;
         this.btnOrder.node.active = this.isPlayer() && (this.room.state.phase === GamePhase.INSESSION || this.room.state.phase === GamePhase.WAITFORTAKERISK);
         this.btnQuitRoom.node.active = !this.isPlayer() || this.room.state.phase === GamePhase.WAITING;
-        
+
     }
 
     // Ví dụ hàm callback Kick:
