@@ -7,7 +7,7 @@ const { ccclass, property } = _decorator;
 
 @ccclass('Player3card')
 export class Player3card extends Component {
-    cardComponent = [];
+    cardComponent: Card[] = [];
     @property(Node) obj_MyTurn;
     @property(Node) cardParent;
     @property(Prefab) pre_Card;
@@ -27,17 +27,19 @@ export class Player3card extends Component {
     public sessionId;
     allMyCards;
     sortOption = 1;
+    private obj_MyTurnOriginPos = new Vec3();
     private onKickCallback: (sessionId: string) => void = null;
 
-    protected start(): void {
+    protected onLoad(): void {
         for (let i = 0; i < 10; i++) {
             let card_tmp = instantiate(this.pre_Card);
-            let cardComponent = card_tmp.getComponent(Card);
+            let cardC = card_tmp.getComponent(Card);
             card_tmp.parent = this.cardParent;
-            this.cardComponent.push(cardComponent)
+            this.cardComponent.push(cardC)
             card_tmp.active = false;
         }
         console.log('this.cardParent ', this.cardParent)
+        this.obj_MyTurnOriginPos = this.obj_MyTurn.getPosition().clone();
         // this._layout = this.cardParent.getComponent(Layout);
     }
     enableLayout() {
@@ -121,6 +123,7 @@ export class Player3card extends Component {
     }
 
     setCard(cards) {
+        // console.log('setCard ', cards)
         if (cards) {
             this.allMyCards = cards;
             for (let i = 0; i < cards.length; i++) {
@@ -136,7 +139,12 @@ export class Player3card extends Component {
         if (cards) {
             for (let i = 0; i < cards.length; i++) {
                 for (let j = 0; j < this.cardComponent.length; j++) {
-                    if (this.cardComponent[j].getCard().number == cards[i].number && this.cardComponent[j].getCard().suit == cards[i].suit) {
+                    const card = this.cardComponent[j].getCard();
+                    // console.log('removeCard ', j, cards[i], card);
+                    if (!card) {
+                        continue;
+                    }
+                    if (card.number == cards[i].number && card.suit == cards[i].suit) {
                         this.cardComponent[j].node.active = false;
                     }
 
@@ -160,12 +168,12 @@ export class Player3card extends Component {
 
         if (isMyTurn) {
             this.obj_MyTurn.active = true;
-            const orig = this.obj_MyTurn.getPosition();
+
             tween(this.obj_MyTurn)
                 .repeatForever(
                     tween()
-                        .to(0.5, { position: new Vec3(orig.x, orig.y + 10, orig.z) }, { easing: easing.sineInOut })
-                        .to(0.5, { position: orig }, { easing: easing.sineInOut })
+                        .to(0.5, { position: new Vec3(this.obj_MyTurnOriginPos.x, this.obj_MyTurnOriginPos.y + 10, this.obj_MyTurnOriginPos.z) }, { easing: easing.sineInOut })
+                        .to(0.5, { position: this.obj_MyTurnOriginPos }, { easing: easing.sineInOut })
                 )
                 .start();
         } else {
@@ -185,7 +193,7 @@ export class Player3card extends Component {
     }
 
     showCardLeft(num) {
-        console.log('showCardLeft ', num, this.cardComponent.length)
+        // console.log('showCardLeft ', num, this.cardComponent.length)
         if (this.cardComponent.length == 0) {
             for (let i = 0; i < num; i++) {
                 let card_tmp = instantiate(this.pre_Card);
@@ -207,7 +215,7 @@ export class Player3card extends Component {
     }
 
     showMoney(num) {
-        console.log('showmoney ', num)
+        // console.log('showmoney ', num)
         this.txt_Money.string = num;
         commonFUnc.vfx_press(this.txt_Money.node)
     }

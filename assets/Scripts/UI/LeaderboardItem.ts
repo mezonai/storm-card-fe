@@ -21,7 +21,7 @@ export class LeaderboardItem extends Component {
         this.labelScore.string = score.toString();
         // Xử lý hiển thị icon top 1, 2, 3
         if (this.iconRank) {
-            console.log('rank', rank)
+            // console.log('rank', rank)
             this.iconRank.node.active = rank <= 3;
             // Có thể thay spriteFrame theo rank nếu muốn
             switch (rank) {
