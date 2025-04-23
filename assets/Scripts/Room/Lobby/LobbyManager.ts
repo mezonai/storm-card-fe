@@ -122,7 +122,7 @@ export class LobbyManager extends NetworkManager {
             room.clients > 0 && (room.name == GlobalVariable.gameInLobby || room.name == GlobalVariable.gameRoom)
         )
         for (let i = 0; i < listRoom.length; i++) {
-            console.log('listRoom[i] ', listRoom[i]);
+            // console.log('listRoom[i] ', listRoom[i]);
             let isLock = false;
             let roomCom = this.listRoomComponent.find(obj => obj.roomId == listRoom[i].roomId);
             if (roomCom) {

@@ -18,7 +18,8 @@ export class Player3card extends Component {
     @property(Sprite) spr_Avar;
     @property({ type: Button }) btn_Kick: Button = null;
     @property({ type: Node }) obj_Owner: Node = null;
-    _layout;
+    @property({ type: Layout }) obj_layout: Layout = null;
+    // _layout;
 
     myIndex;
     public isDealer;
@@ -37,18 +38,20 @@ export class Player3card extends Component {
             card_tmp.active = false;
         }
         console.log('this.cardParent ', this.cardParent)
-        this._layout = this.cardParent.getComponent(Layout);
+        // this._layout = this.cardParent.getComponent(Layout);
     }
     enableLayout() {
-        console.log('enableLayout ', this._layout)
-        if (!this._layout) return;
-        this._layout.updateLayout(true);
-        this._layout.updateLayout();
+        console.log('enableLayout ', this.obj_layout)
+        if (!this.obj_layout) return;
+        this.obj_layout.updateLayout(true);
+        this.obj_layout.updateLayout();
+
         setTimeout(() => {
-            this._layout.updateLayout();
-            this._layout.updateLayout(true);
+            this.obj_layout.updateLayout();
+            this.obj_layout.updateLayout(true);
         }, 500);
     }
+
     resetToNewGame() {
         for (let i = 0; i < this.cardComponent.length; i++) {
             this.cardComponent[i].node.active = false;
@@ -128,6 +131,7 @@ export class Player3card extends Component {
         }
         this.enableLayout();
     }
+    
     removeCard(cards) {
         if (cards) {
             for (let i = 0; i < cards.length; i++) {
@@ -169,14 +173,17 @@ export class Player3card extends Component {
         }
         if (this.obj_Ready.active == true) this.obj_Ready.active = false;
     }
+
     setIsReady(isReady) {
         this.obj_Ready.active = isReady;
         commonFUnc.vfx_press(this.obj_Ready)
     }
+
     setIsInRound(isIn) {
         // if (this.obj_IsInRound)
         this.obj_IsInRound.active = !isIn;
     }
+
     showCardLeft(num) {
         console.log('showCardLeft ', num, this.cardComponent.length)
         if (this.cardComponent.length == 0) {
@@ -189,7 +196,7 @@ export class Player3card extends Component {
             }
         }
         this.enableLayout();
-        this._layout.spacingX = -40;
+        this.obj_layout.spacingX = -40;
 
         for (let i = 0; i < this.cardComponent.length; i++) {
             if (i < num)
@@ -198,6 +205,7 @@ export class Player3card extends Component {
                 this.cardComponent[i].node.active = false;
         }
     }
+
     showMoney(num) {
         console.log('showmoney ', num)
         this.txt_Money.string = num;

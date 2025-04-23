@@ -74,11 +74,16 @@ export class GameManager3card extends NetworkManager {
             }
         };
 
-        game.on(Game.EVENT_HIDE, () => {
-            // game chuyển sang background (tab khác, minimize window,…)
-            console.log("game.EVENT_HIDE =>", this.room);
-            this.requestLeaveRoom();
-        });
+        // game.on(Game.EVENT_HIDE, () => {
+        //     // game chuyển sang background (tab khác, minimize window,…)
+        //     console.log("game.EVENT_HIDE =>", this.room);
+        //     this.requestLeaveRoom(false);
+        // });
+        // game.on(Game.EVENT_SHOW, () => {
+        //     // game chuyển sang background (tab khác, minimize window,…)
+        //     console.log("game.EVENT_SHOW =>", this.room);
+        //     this.tryReconnect();
+        // });
         this.resetTextLabel();
     }
 
@@ -132,8 +137,8 @@ export class GameManager3card extends NetworkManager {
     public async connect(name, room) {
         try {
             this.CreateClient();
-            // let reconnected = await this.tryReconnect();
-            // if (reconnected) return true;
+            let reconnected = await this.tryReconnect();
+            if (reconnected) return true;
             await this.joinRoom(
                 room.roomId,
                 {
@@ -198,6 +203,7 @@ export class GameManager3card extends NetworkManager {
             this.room.state.listen('timeToRisk', this.updateCoutdownLabelForTakeRisk.bind(this));
             this.room.state.listen('currTurn', this.updateTurnLabel.bind(this));
             this.room.state.listen('lastCards', this.showLastCard.bind(this));
+            this.room.state.listen('playInRound', this.showLastCard.bind(this));
             this.refreshKickButtonsForAll();
             this.checkMainBtn();
             this.ShowUIState();
@@ -215,6 +221,7 @@ export class GameManager3card extends NetworkManager {
             this.showMyCard(value.cards)
             this.ShowUIState();
         })
+        
         this.room.onMessage("warning", (value) => {
             this.sc_Warning.setWarning(value.message)
         })
@@ -320,6 +327,7 @@ export class GameManager3card extends NetworkManager {
         const lastRoomId = sys.localStorage.getItem("lastRoomId");
         const lastSessionId = sys.localStorage.getItem("lastSessionId");
         const reconnectionToken = sys.localStorage.getItem("reconnectionToken");
+        console.log("tryReconnect =>", lastRoomId, lastSessionId, reconnectionToken);
         if (!lastRoomId || !lastSessionId || !reconnectionToken) {
             console.log("Không có room cũ => thoát lobby");
             // this.obj_Disconnect.active = true;
@@ -429,6 +437,20 @@ export class GameManager3card extends NetworkManager {
             }
         });
 
+        // player.listen('newCards', (value, previousValue) => {
+        //     console.log('newCards ', value.cards)
+        //     if (this.room.state.phase == GamePhase.INSESSION || this.room.state.phase == GamePhase.WAITFORENDSESSION || this.room.state.phase == GamePhase.WAITFORTAKERISK) {
+        //         for (let j = 0; j < this.listPlayerComponent.length; j++) {
+        //             if (this.listPlayerComponent[j].sessionId === player.sessionId && player.sessionId === this.myPlayer?.sessionId) {
+        //                 // this.listPlayerComponent[j].showCardLeft(player.cardLeftNum)
+        //                 console.log('newCards1 ', value.cards)
+        //                 this.showMyCard(value.cards)
+        //                 this.ShowUIState();
+        //             }
+        //         }
+        //     }
+        // });
+
         player.listen('money', (value, previousValue) => {
             for (let j = 0; j < this.listPlayerComponent.length; j++) {
                 if (this.listPlayerComponent[j].sessionId == player.sessionId) {
@@ -525,7 +547,12 @@ export class GameManager3card extends NetworkManager {
         this.checkMainBtn();
     }
 
-
+    showPlayerInRound() {
+        for (let j = 0; j < this.listPlayerComponent.length; j++) {
+            this.listPlayerComponent[j].setIsInRound(this.room.state.playInRound.includes(this.listPlayerComponent[j].myIndex))
+        }
+    }
+    
     showLastCard() {
         if (this.cardComponent.length == 10) {
             for (let i = 0; i < 10; i++) {
@@ -660,6 +687,7 @@ export class GameManager3card extends NetworkManager {
         playerComponent.setName(_player.userName);
         playerComponent.setOwner(_player.isOwner);
         playerComponent.showMoney(_player.money);
+        playerComponent.setIsReady(_player.isReady);
         playerComponent.setPositionInTable(_index);
         playerComponent.initKickButton(canKick, this.onKickPlayer.bind(this));
         // playerComponent.showCardLeft(_player.cardLeftNum);
@@ -672,7 +700,7 @@ export class GameManager3card extends NetworkManager {
     }
 
     ShowUIState() {
-        // console.log('ShowUi State ', state.phase)
+        console.log('ShowUi State ', this.room.state.phase)
         switch (this.room.state.phase) {
             case GamePhase.WAITING:
                 console.log(GamePhase.WAITING, this.isPlayer(), this.room.state.players[this.myIndex]?.isOwner == true)
@@ -715,11 +743,11 @@ export class GameManager3card extends NetworkManager {
                     this.btnPassTurn.node.active = false;
                 }
 
-                if (this.room.state.lastPlayer != '') {
-                    for (let j = 0; j < this.listPlayerComponent.length; j++) {
-                        this.listPlayerComponent[j].setIsInRound(this.room.state.playInRound.includes(this.listPlayerComponent[j].myIndex))
-                    }
-                }
+                // if (this.room.state.lastPlayer != '') {
+                //     for (let j = 0; j < this.listPlayerComponent.length; j++) {
+                //         this.listPlayerComponent[j].setIsInRound(this.room.state.playInRound.includes(this.listPlayerComponent[j].myIndex))
+                //     }
+                // }
                 break;
             case GamePhase.ENDEDSESION:
                 // this.btnOrder.node.active = false;
@@ -749,9 +777,9 @@ export class GameManager3card extends NetworkManager {
                 // this.btnQuitRoom.node.active = false;
                 // this.btnSitDown.node.active = false;
                 // this.btnStandUp.node.active = false;
-                for (let j = 0; j < this.listPlayerComponent.length; j++) {
-                    this.listPlayerComponent[j].setIsInRound(true)
-                }
+                // for (let j = 0; j < this.listPlayerComponent.length; j++) {
+                //     this.listPlayerComponent[j].setIsInRound(true)
+                // }
                 break;
         }
     }
@@ -761,8 +789,8 @@ export class GameManager3card extends NetworkManager {
         this.txt_TotalSpectator.string = '0';
     }
 
-    async requestLeaveRoom() {
-        this.room.leave();
+    async requestLeaveRoom(consented: boolean = true) {
+        this.room.leave(consented);
         GlobalEvent.emit('backToLobby-event');
         this.myIndex = 0;
         this.myPlayer = null;
