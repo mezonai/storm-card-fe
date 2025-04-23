@@ -223,7 +223,7 @@ export class Player3card extends Component {
     setPositionInTable(index) {
         switch (index) {
             case 0:
-                this.cardParent.setPosition(0, 100)
+                this.cardParent.setPosition(0, 120)
                 break;
             case 1:
                 this.cardParent.angle = (90);
