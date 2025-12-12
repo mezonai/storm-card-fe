@@ -38,12 +38,12 @@ export class Player3card extends Component {
             this.cardComponent.push(cardC)
             card_tmp.active = false;
         }
-        console.log('this.cardParent ', this.cardParent)
+        // console.log('this.cardParent ', this.cardParent)
         this.obj_MyTurnOriginPos = this.obj_MyTurn.getPosition().clone();
         // this._layout = this.cardParent.getComponent(Layout);
     }
     enableLayout() {
-        console.log('enableLayout ', this.obj_layout)
+        // console.log('enableLayout ', this.obj_layout)
         if (!this.obj_layout) return;
         this.obj_layout.updateLayout(true);
         this.obj_layout.updateLayout();
@@ -67,7 +67,7 @@ export class Player3card extends Component {
         this.myIndex = index;
         let that = this;
         let tryLoad = false;
-        console.log('avar: ', url)
+        // console.log('avar: ', url)
         assetManager.loadRemote(url, { ext: '.png' }, (err, imageAsset) => {
             if (err) {
                 console.log("Failed to load image:", err);
@@ -76,7 +76,7 @@ export class Player3card extends Component {
             }
 
             if (!(imageAsset instanceof ImageAsset)) {
-                console.log("Loaded asset is not an ImageAsset!");
+                // console.log("Loaded asset is not an ImageAsset!");
                 return;
             }
             const texture = new Texture2D();
@@ -95,7 +95,7 @@ export class Player3card extends Component {
                 }
 
                 if (!(imageAsset instanceof ImageAsset)) {
-                    console.log("Loaded asset is not an ImageAsset!");
+                    // console.log("Loaded asset is not an ImageAsset!");
                     return;
                 }
                 const texture = new Texture2D();
@@ -158,7 +158,7 @@ export class Player3card extends Component {
         }
         this.enableLayout();
 
-        console.log('allMyCards ', this.allMyCards)
+        // console.log('allMyCards ', this.allMyCards)
     }
 
     setCurrentTurn(isMyTurn) {
@@ -250,9 +250,9 @@ export class Player3card extends Component {
 
     refreshOrder() {
         this.sortOption = 1 - this.sortOption;
-        console.log('allMyCards be ', this.allMyCards)
+        // console.log('allMyCards be ', this.allMyCards)
         let affterOfer = this.customSort(this.allMyCards, this.sortOption)
-        console.log('allMyCards af ', affterOfer)
+        // console.log('allMyCards af ', affterOfer)
         for (let i = 0; i < this.cardComponent.length; i++) {
             if (i < affterOfer.length) {
                 this.cardComponent[i].setCard(affterOfer[i])

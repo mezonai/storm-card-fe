@@ -66,7 +66,7 @@ export class GameManager3card extends NetworkManager {
         }, this);
 
         window.onbeforeunload = () => {
-            console.log("window.onbeforeunload =>", this.room);
+            // console.log("window.onbeforeunload =>", this.room);
             if (this.room && this.room.id && this.room.sessionId) {
                 sys.localStorage.setItem("lastRoomId", this.room.id);
                 sys.localStorage.setItem("lastSessionId", this.room.sessionId);
@@ -114,7 +114,7 @@ export class GameManager3card extends NetworkManager {
 
 
     public async createGameRoom(obj) {
-        console.log("createGameRoom!", obj);
+        // console.log("createGameRoom!", obj);
         try {
             await this.createNewRoom(
                 GlobalVariable.gameRoom,
@@ -175,13 +175,13 @@ export class GameManager3card extends NetworkManager {
         this.room.state.spectators.onRemove(this.renderSpectators.bind(this), false)
 
         window.Mezon.WebView.onEvent('SEND_TOKEN_RESPONSE_SUCCESS', (type, data) => {
-            console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
+            // console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
             this.room.send("getBalance")
         });
         this.room.onMessage("balance", (value) => {
             MyUserInfo.instance.setMoney(value)
         })
-        console.log("joined GAME successfully!", this.room.state.totalPlayer);
+        // console.log("joined GAME successfully!", this.room.state.totalPlayer);
         // Lưu roomId/sessionId
         sys.localStorage.setItem("lastRoomId", this.room.id);
         sys.localStorage.setItem("lastSessionId", this.room.sessionId);
@@ -227,7 +227,7 @@ export class GameManager3card extends NetworkManager {
         })
 
         this.room.onMessage("noticeState", (value) => {
-            console.log(value.message)
+            // console.log(value.message)
             this.txt_NoticeState.string = value.message
             if (value.hasOwnProperty("state")) {
                 switch (value.state) {
@@ -250,13 +250,13 @@ export class GameManager3card extends NetworkManager {
 
         this.room.onMessage("kickResult", (data) => {
             // data.message = "Bạn đã kick player XXX thành công!"
-            console.log("Kick Result: ", data.message);
+            // console.log("Kick Result: ", data.message);
             this.sc_Warning.setWarning(data.message);
         });
 
         this.room.onMessage("kicked", (data) => {
             // data.message = "Bạn đã bị kick khỏi phòng bởi ..."
-            console.log("Server báo mình bị kick: ", data.message);
+            // console.log("Server báo mình bị kick: ", data.message);
 
             // Hiển thị cảnh báo
             this.sc_Warning.setWarning(data.message);
@@ -278,17 +278,17 @@ export class GameManager3card extends NetworkManager {
         this.room.onMessage('youLose', (value) => { console.log('lose'); this.youLose(value) });
 
         this.room.onMessage("Join", (value) => {
-            console.log(">>> join " + value)
+            // console.log(">>> join " + value)
         })
 
         this.room.onLeave(async (code) => {
             window.Mezon.WebView.postEvent("LEAVE_ROOM", {});
-            console.log("onLeave:", code);
+            // console.log("onLeave:", code);
 
 
             // Trường hợp mất kết nối bất ngờ → thử reconnect
             if (1001 <= code && 1015 >= code && code !== 1006) {
-                console.log("Mất kết nối => tryReconnect");
+                // console.log("Mất kết nối => tryReconnect");
                 await this.tryReconnect();
             } else if (code === 1006) {
                 UIManager.Instance.showUI(UIID.PopupError);
@@ -327,9 +327,9 @@ export class GameManager3card extends NetworkManager {
         const lastRoomId = sys.localStorage.getItem("lastRoomId");
         const lastSessionId = sys.localStorage.getItem("lastSessionId");
         const reconnectionToken = sys.localStorage.getItem("reconnectionToken");
-        console.log("tryReconnect =>", lastRoomId, lastSessionId, reconnectionToken);
+        // console.log("tryReconnect =>", lastRoomId, lastSessionId, reconnectionToken);
         if (!lastRoomId || !lastSessionId || !reconnectionToken) {
-            console.log("Không có room cũ => thoát lobby");
+            // console.log("Không có room cũ => thoát lobby");
             // this.obj_Disconnect.active = true;
             // GlobalEvent.emit('backToLobby-event');
             return false;
@@ -337,10 +337,10 @@ export class GameManager3card extends NetworkManager {
 
         try {
             // UIManager.Instance.showUI(UIID.ReconnectPopup);
-            console.log("Thử reconnect =>", lastRoomId, lastSessionId, reconnectionToken);
+            // console.log("Thử reconnect =>", lastRoomId, lastSessionId, reconnectionToken);
             if (!this.client) this.CreateClient();
             const oldRoom = await this.client.reconnect(reconnectionToken);
-            console.log("Reconnect thành công => oldRoom:", oldRoom);
+            // console.log("Reconnect thành công => oldRoom:", oldRoom);
             // UIManager.Instance.HideUI(UIID.ReconnectPopup);
             this.room = oldRoom;
             this.registerRoomEvents();
@@ -384,7 +384,7 @@ export class GameManager3card extends NetworkManager {
                 turnTmp = true
                 if (this.listPlayerComponent[j].sessionId == this.room.sessionId && this.room.state.phase !== GamePhase.WAITING) {
                     SoundManager.instance.playSfx(this.clip_Yourturn)
-                    console.log('play sounddđ')
+                    // console.log('play sounddđ')
                 }
             }
             // console.log('listPlayerComponent turn: ', this.listPlayerComponent[j].myIndex)
@@ -399,12 +399,12 @@ export class GameManager3card extends NetworkManager {
         // console.log('adddd player', player.sessionId)
         // console.log('listPlayerJoinRoom ', this.listPlayerJoinRoom.length, " ", GlobalVariable.clientNum.value)
         this.listPlayerJoinRoom.push(player)
-        console.log('addNewPlayer listPlayerJoinRoom ', this.listPlayerJoinRoom)
+        // console.log('addNewPlayer listPlayerJoinRoom ', this.listPlayerJoinRoom)
         if (player.sessionId == this.room.sessionId) {
             this.myIndex = player.index;
             this.isOwner = player.isOwner;
-            console.log('addNewPlayer this.myIndex ', this.myIndex, this.isOwner)
-            console.log('this.room.state.players.length ', this.room.state.players.length)
+            // console.log('addNewPlayer this.myIndex ', this.myIndex, this.isOwner)
+            // console.log('this.room.state.players.length ', this.room.state.players.length)
         }
 
         //remove all child this.slots and this.listPlayerComponent
@@ -422,7 +422,7 @@ export class GameManager3card extends NetworkManager {
                 let validIndex = i - this.myIndex;
                 if (validIndex < 0) validIndex = validIndex + this.listPlayerJoinRoom.length
                 const canKick = this.isOwner && (this.listPlayerJoinRoom[i].sessionId !== this.room.sessionId && this.room.state.phase === GamePhase.WAITING);
-                console.log('cankick', canKick, this.isOwner, player.sessionId, this.room.sessionId, validIndex)
+                // console.log('cankick', canKick, this.isOwner, player.sessionId, this.room.sessionId, validIndex)
                 this.genTable(this.listPlayerJoinRoom[i], validIndex, i, canKick);
             }
         }
@@ -464,7 +464,7 @@ export class GameManager3card extends NetworkManager {
 
             // Nếu player này là localPlayer => cập nhật cờ isOwner
             if (player.sessionId == this.room.sessionId) {
-                console.log('isOwner ', currentValue);
+                // console.log('isOwner ', currentValue);
                 this.isOwner = currentValue;
                 this.refreshKickButtonsForAll(); // Mình trở thành owner (hoặc mất owner)
             }
@@ -489,7 +489,7 @@ export class GameManager3card extends NetworkManager {
         for (let i = 0; i < this.room.state.players.length; i++) {
             for (let j = 0; j < this.listPlayerComponent.length; j++) {
                 if (this.listPlayerComponent[j].sessionId == this.room.state.players[i].sessionId) {
-                    console.log(player.money, this.listPlayerComponent[j].sessionId)
+                    // console.log(player.money, this.listPlayerComponent[j].sessionId)
                     this.listPlayerComponent[j].showMoney(this.room.state.players[i].money)
                 }
             }
@@ -515,7 +515,7 @@ export class GameManager3card extends NetworkManager {
             }
         }
         if (player.index < this.myIndex && this.myIndex > 0) this.myIndex--
-        console.log('removePlayer myindex: ', this.myIndex)
+        // console.log('removePlayer myindex: ', this.myIndex)
         for (let j = 0; j < this.listPlayerComponent.length; j++) {
             this.listPlayerComponent[j].updateMyIndex(player.index)
             const canKick = this.isOwner && this.listPlayerComponent[j].sessionId !== this.room.sessionId && this.room.state.phase === GamePhase.WAITING;
@@ -542,7 +542,7 @@ export class GameManager3card extends NetworkManager {
 
     private renderSpectators() {
         // clear container
-        console.log('renderSpectators this.room.state.spectators.length ', this.room.state.spectators.length)
+        // console.log('renderSpectators this.room.state.spectators.length ', this.room.state.spectators.length)
         this.txt_TotalSpectator.string = this.room.state.spectators.length || 0;
         this.checkMainBtn();
     }
@@ -700,10 +700,10 @@ export class GameManager3card extends NetworkManager {
     }
 
     ShowUIState() {
-        console.log('ShowUi State ', this.room.state.phase)
+        // console.log('ShowUi State ', this.room.state.phase)
         switch (this.room.state.phase) {
             case GamePhase.WAITING:
-                console.log(GamePhase.WAITING, this.isPlayer(), this.room.state.players[this.myIndex]?.isOwner == true)
+                // console.log(GamePhase.WAITING, this.isPlayer(), this.room.state.players[this.myIndex]?.isOwner == true)
                 if (this.isPlayer()) {
                     if (this.room.state.players[this.myIndex]?.isOwner == true) {
                         this.btnStartGame.node.active = true;

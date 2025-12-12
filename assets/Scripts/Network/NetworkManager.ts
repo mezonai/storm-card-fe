@@ -9,7 +9,7 @@ export class NetworkManager extends Component {
     room!: Colyseus.Room;
 
     public async createNewRoom(roomName, options, isLobby) {
-        console.log('createNewRoom', options)
+        // console.log('createNewRoom', options)
         this.client = new Colyseus.Client(`${GlobalVariable.useSSL ? "wss" : "ws"}://${GlobalVariable.hostname}${([443, 80].includes(GlobalVariable.port) || GlobalVariable.useSSL) ? "" : `:${GlobalVariable.port}`}`);
 
         if (isLobby) {
@@ -21,7 +21,7 @@ export class NetworkManager extends Component {
         }
     }
     public async joinRoom(id, options) {
-        console.log('join to ', id)
+        // console.log('join to ', id)
         // this.client = new Colyseus.Client(`${GlobalVariable.useSSL ? "wss" : "ws"}://${GlobalVariable.hostname}${([443, 80].includes(GlobalVariable.port) || GlobalVariable.useSSL) ? "" : `:${GlobalVariable.port}`}`);
         this.room = await this.client.joinById(id, options)
     }

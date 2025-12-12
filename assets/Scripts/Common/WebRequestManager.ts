@@ -77,7 +77,7 @@ export class WebRequestManager extends Component {
     }
 
     private onErrorHandler(response, onError) {
-        console.log(response)
+        // console.log(response)
         let json = JSON.parse(response);
         if (this.errorMessageMap.has(json.error_code)) {
             json.error_message = this.errorMessageMap.get(json.error_code) || '';

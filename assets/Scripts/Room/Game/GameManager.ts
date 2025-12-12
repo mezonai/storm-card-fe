@@ -111,7 +111,7 @@ export class GameManager extends NetworkManager {
             this.room.state.players.onAdd(this.addNewPlayer.bind(this), false)
             // this.room = await this.client.consumeSeatReservation(room);
             // this.room = await this.client.consumeSeatReservation(room);
-            console.log("joined successfully!");
+            // console.log("joined successfully!");
             this.room.onStateChange((state) => {
                 this.genTable(state);
             });
@@ -126,14 +126,14 @@ export class GameManager extends NetworkManager {
             });
 
             this.room.onMessage("MESSAGE", (value) => {
-                console.log(">>> MESSAGE " + value)
+                // console.log(">>> MESSAGE " + value)
             })
             this.room.onMessage("Join", (value) => {
-                console.log(">>> join " + value)
+                // console.log(">>> join " + value)
             })
 
             this.room.onLeave((code) => {
-                console.log("onLeave:", code);
+                // console.log("onLeave:", code);
             });
         } catch (e) {
             console.error(e);
@@ -156,18 +156,18 @@ export class GameManager extends NetworkManager {
         // this.updateView(index, player.isMoving, player.faceDirection)
         player.listen('sessionId', (value, previousValue) => {
             // this.updateView(index, value, player.faceDirection);
-            console.log('sessionId : ', value)
+            // console.log('sessionId : ', value)
         });
         // player.listen('faceDirection', (value, previousValue) => {
         //     this.updateView(index, player.isMoving, value);
         // });
         player.listen('cards', (value, previousValue) => {
             // this.updatePosition(index, value);
-            console.log('cards : ', value[0])
+            // console.log('cards : ', value[0])
         });
         player.listen('isBanker', (value, previousValue) => {
             // this.updatePosition(index, value);
-            console.log('isBanker : ', value)
+            // console.log('isBanker : ', value)
         });
 
     }

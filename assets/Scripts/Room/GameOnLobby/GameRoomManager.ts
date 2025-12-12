@@ -71,9 +71,9 @@ export class GameRoomManager extends NetworkManager {
         try {
             this.btn_Out.node.on('click', this.requestLeaveRoom, this)
             await this.createNewRoom(GlobalVariable.gameInLobby, { roomName: obj.roomName, betAmount: obj.betAmount, userName: GlobalVariable.myMezonInfo.name, userId: GlobalVariable.myMezonInfo.id, avatar: GlobalVariable.myMezonInfo.avatar }, false);
-            console.log("joined successfully!", this.room);
+            // console.log("joined successfully!", this.room);
             window.Mezon.WebView.onEvent('SEND_TOKEN_RESPONSE_SUCCESS', (type, data) => {
-                console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
+                // console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
                 this.room.send("getBalance")
             });
             this.room.onMessage("warning", (value) => {
@@ -81,7 +81,7 @@ export class GameRoomManager extends NetworkManager {
             })
             this.room.onMessage("joinRoomGame", (roomInfo) => {
                 this.room.leave();
-                console.log("request join roooom 1  " + roomInfo)
+                // console.log("request join roooom 1  " + roomInfo)
                 this.obj_Game.active = true;
                 this.obj_GameRoomLobby.active = false;
                 this.gameManager.connect(obj.userName, roomInfo);
@@ -93,7 +93,7 @@ export class GameRoomManager extends NetworkManager {
 
             this.room.onMessage("kickResult", (data) => {
                 // data.message = "Bạn đã kick player XXX thành công!"
-                console.log("Kick Result: ", data.message);
+                // console.log("Kick Result: ", data.message);
                 this.sc_Warning.setWarning(data.message);
             });
 
@@ -110,7 +110,7 @@ export class GameRoomManager extends NetworkManager {
             this.room.state.players.onRemove(this.reMoveClient.bind(this), false)
             this.room.onLeave((code) => {
                 this.resetRoom()
-                console.log("onLeave:", code);
+                // console.log("onLeave:", code);
                 if (1001 <= code && 1015 >= code) {
                     // this.obj_Disconnect.active = true;
                     UIManager.Instance.showUI(UIID.PopupError);
@@ -131,16 +131,16 @@ export class GameRoomManager extends NetworkManager {
             await this.joinRoom(id, { userName: GlobalVariable.myMezonInfo.name, avatar: GlobalVariable.myMezonInfo.avatar, roomName: 'default', userId: GlobalVariable.myMezonInfo.id });
             this.txt_RoomName.string = 'Phòng: ' + this.room.state.roomName
             window.Mezon.WebView.onEvent('SEND_TOKEN_RESPONSE_SUCCESS', (type, data) => {
-                console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
+                // console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
                 this.room.send("getBalance")
             });
-            console.log("joined successfully!");
+            // console.log("joined successfully!");
             this.room.onMessage("warning", (value) => {
                 this.sc_Warning.setWarning(value.message)
             })
             this.room.onMessage("joinRoomGame", (roomInfo) => {
                 this.room.leave();
-                console.log("request join roooom 2  " + roomInfo)
+                // console.log("request join roooom 2  " + roomInfo)
                 this.obj_Game.active = true;
                 this.obj_GameRoomLobby.active = false;
                 this.gameManager.connect(options.userName, roomInfo);
@@ -151,7 +151,7 @@ export class GameRoomManager extends NetworkManager {
 
             this.room.onMessage("kicked", (data) => {
                 // data.message = "Bạn đã bị kick khỏi phòng bởi ..."
-                console.log("Server báo mình bị kick: ", data.message);
+                // console.log("Server báo mình bị kick: ", data.message);
 
                 // Hiển thị cảnh báo
                 this.sc_Warning.setWarning(data.message);
@@ -174,7 +174,7 @@ export class GameRoomManager extends NetworkManager {
 
             this.room.onLeave((code) => {
                 this.resetRoom()
-                console.log("onLeave:", code);
+                // console.log("onLeave:", code);
                 // Kiểm tra code = 4001 => bị kick
                 if (code === 4001) {
                     this.sc_Warning.setWarning("Bạn đã bị kick khỏi phòng!");

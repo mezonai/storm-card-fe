@@ -52,7 +52,7 @@ export class UIManager extends Component {
     public showUI(id: UIID): Node {
         if (this.lstPanel == null) return;
         //Popup
-        console.log('showID', id);
+        // console.log('showID', id);
         for (const panel of this.lstPanel) {
             if (panel && panel.id === id && panel.isPopup) {
                 panel.show(panel.isShowOnFrontest);

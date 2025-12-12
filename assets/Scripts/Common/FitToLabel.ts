@@ -34,13 +34,13 @@ export class FitToLabel extends Component {
 
         const labelTransform = this.labelNode.getComponent(UITransform);
         const myTransform = this.node.getComponent(UITransform);
-        console.log('labelTransform ', labelTransform)
-        console.log('myTransform ', myTransform)
+        // console.log('labelTransform ', labelTransform)
+        // console.log('myTransform ', myTransform)
         if (labelTransform && myTransform) {
             const labelWidth = labelTransform.contentSize.width + this.horizontalPadding * 2;
             const newWidth = Math.max(labelWidth, this.defaultWidth);
             myTransform.setContentSize(newWidth, myTransform.contentSize.height);
-            console.log('newWidth ', newWidth)
+            // console.log('newWidth ', newWidth)
             // 👉 Tính lại vị trí label dựa trên alignment
             let x = 0;
             switch (this.alignment) {
@@ -57,7 +57,7 @@ export class FitToLabel extends Component {
                     x = 0;
                     break;
             }
-            console.log('labelNodex ', x)
+            // console.log('labelNodex ', x)
             this.labelNode.setPosition(new Vec3(x, this.labelNode.position.y, 0));
         }
     }

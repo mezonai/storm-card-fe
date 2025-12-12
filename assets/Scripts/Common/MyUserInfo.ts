@@ -25,27 +25,27 @@ export class MyUserInfo extends Component {
         GlobalVariable.myMezonInfo.money = money;
     }
     setInfo(data) {
-        console.log('username ', data.user.username);
+        //console.log('username ', data.user.username);
         this.txt_Name.string = data.user.username;
         this.fitToLabel.updateSpriteSize();
-        this.txt_Mezon.string = data.wallet.value;
+        // this.txt_Mezon.string = data.wallet.value;
 
         GlobalVariable.myMezonInfo.avatar = data.user.avatar_url
         GlobalVariable.myMezonInfo.name = data.user.username
         GlobalVariable.myMezonInfo.mail = data.email
         GlobalVariable.myMezonInfo.id = data.user.id
-        GlobalVariable.myMezonInfo.mezonToken = data.wallet.value
+        // GlobalVariable.myMezonInfo.mezonToken = data.wallet.value
 
         let that = this;
         let tryLoad = false;
         assetManager.loadRemote(data.user.avatar_url, { ext: '.png' }, (err, imageAsset) => {
             if (err) {
-                console.log("Failed to load image:", err);
+                //console.log("Failed to load image:", err);
                 return;
             }
 
             if (!(imageAsset instanceof ImageAsset)) {
-                console.log("Loaded asset is not an ImageAsset!");
+                //console.log("Loaded asset is not an ImageAsset!");
                 return;
             }
             const texture = new Texture2D();
@@ -59,12 +59,12 @@ export class MyUserInfo extends Component {
         if (tryLoad) {
             assetManager.loadRemote(data.user.avatar_url, (err, imageAsset) => {
                 if (err) {
-                    console.log("Failed to load image:", err);
+                    //console.log("Failed to load image:", err);
                     return;
                 }
 
                 if (!(imageAsset instanceof ImageAsset)) {
-                    console.log("Loaded asset is not an ImageAsset!");
+                    //console.log("Loaded asset is not an ImageAsset!");
                     return;
                 }
                 const texture = new Texture2D();

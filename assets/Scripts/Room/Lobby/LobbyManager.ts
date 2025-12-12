@@ -61,7 +61,7 @@ export class LobbyManager extends NetworkManager {
         }, this);
         GlobalEvent.on('backToLobby-event', (event) => {
             setTimeout(() => {
-                console.log('backToLobby ', event)
+                // console.log('backToLobby ', event)
                 this.joinLobby()
                 this.obj_LobbyRoom.active = true;
                 this.obj_GameRoom.active = false;
@@ -71,26 +71,26 @@ export class LobbyManager extends NetworkManager {
     public async joinLobby() {
         try {
             await this.createNewRoom(GlobalVariable.lobbyRoom, { userName: GlobalVariable.myMezonInfo.name, userId: GlobalVariable.myMezonInfo.id }, true);
-            console.log('this.room, ', this.room)
+            // console.log('this.room, ', this.room)
             this.room.state.players.onAdd(this.checkRoom.bind(this), false)
             this.room.state.players.onRemove(this.checkRoom.bind(this), false)
             window.Mezon.WebView.onEvent('SEND_TOKEN_RESPONSE_SUCCESS', (type, data) => {
-                console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
+                // console.log('SEND_TOKEN_RESPONSE_SUCCESS ', data)
                 this.room.send("getBalance")
             });
             this.room.onLeave((code) => {
-                console.log("onLeave:", code);
+                // console.log("onLeave:", code);
                 if (1001 <= code && 1015 >= code) {
                     // this.obj_Disconnect.active = true;
                     UIManager.Instance.showUI(UIID.PopupError);
                 }
             });
             this.room.onMessage("balance", (value) => {
-                console.log("take balance:", value);
+                // console.log("take balance:", value);
                 MyUserInfo.instance.setMoney(value)
             })
             this.room.onMessage("roomCreated", (value) => {
-                console.log("roomCreated:", value);
+                // console.log("roomCreated:", value);
                 this.checkRoom();
             })
             this.room.send("getBalance")
@@ -132,7 +132,7 @@ export class LobbyManager extends NetworkManager {
                 let room = instantiate(this.pre_RoomUnit);
                 let roomComponent = room.getComponent(GameRoomUnit);
                 roomComponent.setRoomInfo(listRoom[i].roomId, listRoom[i].metadata?.roomName, listRoom[i].clients + '/' + listRoom[i].maxClients, isLock, listRoom[i].name, listRoom[i].metadata?.betAmount)
-                console.log('new3 ', isLock)
+                // console.log('new3 ', isLock)
                 room.setParent(this.obj_ListRoomParent);
                 this.listRoomComponent.push(roomComponent)
             }
@@ -167,23 +167,23 @@ export class LobbyManager extends NetworkManager {
     click_ConfirmCreat() {
         const value = this.input_RoomBetAmount.string.trim();
         if (!/^\d+$/.test(value)) {
-            console.warn('Mức cược chỉ được nhập số!');
+            // console.warn('Mức cược chỉ được nhập số!');
             this.txt_Warning.string = 'Mức cược chỉ được nhập số!';
             return;
         }
         if (this.input_RoomName.string.trim() === "") {
-            console.warn('Bạn chưa nhập tên phòng');
+            // console.warn('Bạn chưa nhập tên phòng');
             this.txt_Warning.string = 'Bạn chưa nhập tên phòng!';
             return;
         }
         if (this.input_RoomBetAmount.string.trim() === "") {
-            console.warn('Bạn chưa nhập mức cược');
+            // console.warn('Bạn chưa nhập mức cược');
             this.txt_Warning.string = 'Bạn chưa nhập mức cược!';
             return;
         }
         const betAmount = parseInt(this.input_RoomBetAmount.string.trim(), 10);
         if (isNaN(betAmount) || betAmount > GlobalVariable.maxBetAmount) {
-            console.warn('Mức cược không hợp lệ!');
+            // console.warn('Mức cược không hợp lệ!');
             this.txt_Warning.string = 'Mức cược tối đa là 10,000!';
             return;
         }
@@ -196,7 +196,7 @@ export class LobbyManager extends NetworkManager {
         // this.room.leave();
 
         let isJoined = await this.gameManager.createGameRoom({ roomName: roomName, betAmount });
-        console.log("createGameRoom!OKKKKk", isJoined);
+        // console.log("createGameRoom!OKKKKk", isJoined);
         if (isJoined) {
             this.obj_GameRoom.active = true;
             this.obj_LobbyRoom.active = false;
@@ -229,7 +229,7 @@ export class LobbyManager extends NetworkManager {
     }
 
     onTabClicked(index: number) {
-        console.log("Tab clicked:", index);
+        // console.log("Tab clicked:", index);
 
         // TODO: Load data theo tab
         // Hoặc thay content con của scroll view

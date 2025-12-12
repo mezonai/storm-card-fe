@@ -42,7 +42,7 @@ export class APIManager extends Component {
     }
 
     private static xmlBase(method, url, param, needAuth = true, callPrivy = false, privyToken = null) {
-        console.log('xmlBase ', url)
+        // console.log('xmlBase ', url)
         return new Promise(function (resolve, reject) {
             let http = new XMLHttpRequest();
             http.open(method, url, true);
@@ -62,7 +62,7 @@ export class APIManager extends Component {
             }
             http.onreadystatechange = () => {
                 if (http.readyState == 4) {
-                    console.log('api log: ', http.responseText);
+                    // console.log('api log: ', http.responseText);
                     if (http.status >= 200 && http.status < 400) {
                         let out = JSON.parse(http.responseText)
                         return (resolve(out))
@@ -78,7 +78,7 @@ export class APIManager extends Component {
     }
 
     private xmlBaseXAuOnly(method, url, param, needAuth = true) {
-        console.log(APIConfig.token);
+        // console.log(APIConfig.token);
         return new Promise(function (resolve, reject) {
             let http = new XMLHttpRequest();
             http.open(method, url, true);
@@ -91,10 +91,10 @@ export class APIManager extends Component {
             }
             http.onreadystatechange = () => {
                 if (http.readyState == 4) {
-                    console.log('api log: ', http.responseText);
+                    // console.log('api log: ', http.responseText);
                     if (http.status >= 200 && http.status < 400) {
                         let out = JSON.parse(http.responseText)
-                        console.log(out);
+                        // console.log(out);
                         return (resolve(out))
                     }
                     else {

@@ -50,7 +50,6 @@
       postEvent(e, t, r) {
         if (
           (r || (r = function () {}),
-          console.log('[Mezon.WebView] > postEvent', e, t),
           this.isIframe)
         )
           try {
@@ -66,7 +65,6 @@
         else r({ notAvailable: !0 });
       }
       receiveEvent(e, t) {
-        console.log('[Mezon.WebView] < receiveEvent', e, t),
           this.callEventCallbacks(e, function (n) {
             n(e, t);
           });
@@ -176,7 +174,7 @@
                     '*'
                   );
                 } catch (e) {
-                  console.log('error', e);
+                  //console.log('error', e);
                 }
                 location.reload();
                 break;

@@ -64,7 +64,7 @@ export class UIIdentify extends Component {
     };
 
     showPopups() {
-        console.log('showPopups', this.id);
+        // console.log('showPopups', this.id);
         this.attachNodes.forEach(attachNodeData => {
             attachNodeData.widget.left = attachNodeData.originPosition.x + attachNodeData.movePosition.x;
             attachNodeData.widget.top = attachNodeData.originPosition.y + attachNodeData.movePosition.y;
